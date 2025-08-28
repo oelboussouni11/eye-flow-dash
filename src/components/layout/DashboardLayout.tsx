@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   SidebarProvider, 
@@ -78,6 +79,7 @@ export const DashboardLayout: React.FC = () => {
                 <Button variant="ghost" size="icon">
                   <Bell className="w-4 h-4" />
                 </Button>
+                <ThemeToggle />
                 <Button variant="ghost" size="icon">
                   <Settings className="w-4 h-4" />
                 </Button>
