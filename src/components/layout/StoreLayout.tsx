@@ -1,12 +1,15 @@
 import React from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { 
-  Store, 
+  ArrowLeft,
   Users, 
+  Package, 
+  FileText, 
   LogOut, 
   Settings,
   Bell,
   Search,
+  ShoppingCart,
   BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -28,30 +31,51 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
-  { name: 'Stores', href: '/dashboard/stores', icon: Store, ownerOnly: true },
-  { name: 'Employees', href: '/dashboard/employees', icon: Users, ownerOnly: true },
+const storeNavigation = [
+  { name: 'Store Dashboard', href: '/store/:storeId', icon: BarChart3 },
+  { name: 'Clients', href: '/store/:storeId/clients', icon: Users },
+  { name: 'Inventory', href: '/store/:storeId/inventory', icon: Package },
+  { name: 'Sales', href: '/store/:storeId/sales', icon: ShoppingCart },
+  { name: 'Invoices', href: '/store/:storeId/invoices', icon: FileText },
 ];
 
-export const DashboardLayout: React.FC = () => {
-  const { user, logout, isOwner } = useAuth();
+export const StoreLayout: React.FC = () => {
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { storeId } = useParams();
+
+  const [store, setStore] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    if (storeId) {
+      const allStores = JSON.parse(localStorage.getItem('opti_stores') || '[]');
+      const foundStore = allStores.find((s: any) => s.id === storeId);
+      setStore(foundStore);
+    }
+  }, [storeId]);
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
+  const handleBackToDashboard = () => {
+    navigate('/dashboard');
+  };
+
   const isActive = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(path + '/');
+    const actualPath = path.replace(':storeId', storeId || '');
+    if (actualPath === `/store/${storeId}`) {
+      return location.pathname === actualPath;
+    }
+    return location.pathname.startsWith(actualPath);
   };
 
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar />
+        <StoreSidebar />
         
         <div className="flex-1 flex flex-col">
           {/* Header */}
@@ -59,6 +83,14 @@ export const DashboardLayout: React.FC = () => {
             <div className="flex items-center justify-between h-full px-6">
               <div className="flex items-center gap-4">
                 <SidebarTrigger />
+                <Button 
+                  variant="ghost" 
+                  onClick={handleBackToDashboard}
+                  className="flex items-center gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to Dashboard
+                </Button>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                   <Input 
@@ -104,50 +136,59 @@ export const DashboardLayout: React.FC = () => {
   );
 };
 
-const AppSidebar: React.FC = () => {
-  const { user, isOwner } = useAuth();
+const StoreSidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { storeId } = useParams();
   const { state } = useSidebar();
 
-  const isActive = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(path + '/');
-  };
+  const [store, setStore] = React.useState<any>(null);
 
-  const filteredNavigation = navigation.filter(item => 
-    !item.ownerOnly || isOwner
-  );
+  React.useEffect(() => {
+    if (storeId) {
+      const allStores = JSON.parse(localStorage.getItem('opti_stores') || '[]');
+      const foundStore = allStores.find((s: any) => s.id === storeId);
+      setStore(foundStore);
+    }
+  }, [storeId]);
+
+  const isActive = (path: string) => {
+    const actualPath = path.replace(':storeId', storeId || '');
+    if (actualPath === `/store/${storeId}`) {
+      return location.pathname === actualPath;
+    }
+    return location.pathname.startsWith(actualPath);
+  };
 
   return (
     <Sidebar collapsible="icon">
       <SidebarContent className="bg-sidebar">
-        {/* Logo */}
+        {/* Store Info */}
         <div className="p-4 border-b border-sidebar-border">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <Store className="w-4 h-4 text-primary-foreground" />
+          {state === "expanded" && store ? (
+            <div>
+              <h2 className="font-bold text-sidebar-foreground">{store.name}</h2>
+              <p className="text-xs text-sidebar-foreground/60">{store.address}</p>
             </div>
-            {state === "expanded" && (
-              <div>
-                <h2 className="font-bold text-sidebar-foreground">OptiSaaS</h2>
-                <p className="text-xs text-sidebar-foreground/60">Optical Management</p>
-              </div>
-            )}
-          </div>
+          ) : (
+            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+              <BarChart3 className="w-4 h-4 text-primary-foreground" />
+            </div>
+          )}
         </div>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Main Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>Store Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {filteredNavigation.map((item) => (
+              {storeNavigation.map((item) => (
                 <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton 
                     asChild
                     className={isActive(item.href) ? "bg-sidebar-accent text-sidebar-primary" : ""}
                   >
                     <button
-                      onClick={() => navigate(item.href)}
+                      onClick={() => navigate(item.href.replace(':storeId', storeId || ''))}
                       className="flex items-center gap-3 w-full"
                     >
                       <item.icon className="w-4 h-4" />
@@ -159,27 +200,6 @@ const AppSidebar: React.FC = () => {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        {/* User Info at Bottom */}
-        {state === "expanded" && (
-          <div className="mt-auto p-4 border-t border-sidebar-border">
-            <div className="flex items-center gap-3">
-              <Avatar className="w-8 h-8">
-                <AvatarFallback className="bg-sidebar-accent text-sidebar-foreground text-xs">
-                  {user?.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">
-                  {user?.name}
-                </p>
-                <p className="text-xs text-sidebar-foreground/60 capitalize">
-                  {user?.role}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
       </SidebarContent>
     </Sidebar>
   );

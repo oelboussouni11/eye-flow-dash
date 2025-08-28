@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Edit, Trash2, Eye, ExternalLink } from 'lucide-react';
+import { MapPin, Edit, Trash2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -72,17 +72,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
       </CardContent>
 
       <CardFooter className="flex items-center justify-between pt-2">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onView(store)}
-            className="flex items-center gap-1"
-          >
-            <Eye className="w-3 h-3" />
-            View
-          </Button>
-          
+        <div className="flex items-center gap-2">          
           {canEdit && (
             <>
               <Button
@@ -109,13 +99,13 @@ export const StoreCard: React.FC<StoreCardProps> = ({
         </div>
         
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           onClick={() => onView(store)}
           className="flex items-center gap-1"
         >
           <ExternalLink className="w-3 h-3" />
-          Dashboard
+          Enter Store
         </Button>
       </CardFooter>
     </Card>

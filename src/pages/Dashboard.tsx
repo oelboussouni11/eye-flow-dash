@@ -8,6 +8,7 @@ import { StoreFormModal } from '@/components/stores/StoreFormModal';
 import { StatsGrid } from '@/components/dashboard/StatsGrid';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +23,7 @@ import {
 export const Dashboard: React.FC = () => {
   const { user, isOwner } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [stores, setStores] = useState<Store[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -126,10 +128,7 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleViewStore = (store: Store) => {
-    toast({
-      title: "Store Dashboard",
-      description: `Opening dashboard for ${store.name}`
-    });
+    navigate(`/store/${store.id}`);
   };
 
   const filteredStores = stores.filter(store =>
