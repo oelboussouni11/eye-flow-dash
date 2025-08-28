@@ -79,7 +79,5 @@
 
   body {
     @apply bg-background text-foreground;
-    /* Apply dark mode by default */
-    @apply dark;
   }
 }
