@@ -14,6 +14,8 @@ export interface Employee {
   name: string;
   email: string;
   username: string;
+  password: string;
+  role: string;
   ownerId: string;
   assignedStores: string[];
   permissions: {
@@ -49,6 +51,8 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
     name: '',
     email: '',
     username: '',
+    password: '',
+    role: 'employee',
     assignedStores: [] as string[],
     permissions: {
       clients: [] as ('create' | 'read' | 'update' | 'delete')[],
@@ -71,6 +75,8 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
         name: employee.name,
         email: employee.email,
         username: employee.username,
+        password: employee.password,
+        role: employee.role,
         assignedStores: employee.assignedStores,
         permissions: employee.permissions
       });
@@ -79,6 +85,8 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
         name: '',
         email: '',
         username: '',
+        password: '',
+        role: 'employee',
         assignedStores: [],
         permissions: {
           clients: ['read'],
@@ -93,7 +101,7 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name.trim() || !formData.email.trim() || !formData.username.trim()) {
+    if (!formData.name.trim() || !formData.email.trim() || !formData.username.trim() || !formData.password.trim()) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields",
@@ -208,6 +216,18 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
                 placeholder="john@example.com"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password *</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter password"
+                value={formData.password}
+                onChange={(e) => handleInputChange('password', e.target.value)}
                 required
               />
             </div>

@@ -4,8 +4,6 @@ import {
   Store, 
   Users, 
   LogOut, 
-  Settings,
-  Bell,
   Search,
   BarChart3
 } from 'lucide-react';
@@ -69,13 +67,7 @@ export const DashboardLayout: React.FC = () => {
               </div>
               
               <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon">
-                  <Bell className="w-4 h-4" />
-                </Button>
                 <ThemeToggle />
-                <Button variant="ghost" size="icon">
-                  <Settings className="w-4 h-4" />
-                </Button>
                 <div className="flex items-center gap-3">
                   <Avatar>
                     <AvatarFallback className="bg-gradient-primary text-primary-foreground">

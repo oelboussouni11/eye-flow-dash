@@ -56,11 +56,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       let foundUser;
       
       if (username) {
-        // Employee login: find by owner email + username
-        foundUser = users.find((u: User) => 
+        // Employee login: find by username and verify password
+        foundUser = users.find((u: any) => 
           u.role === 'employee' && 
-          u.email === `${username}@${email}` && 
-          u.ownerId === email
+          u.username === username && 
+          u.password === password
         );
       } else {
         // Owner login: find by email
@@ -68,7 +68,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       if (foundUser) {
-        // In real app, verify password hash
         setUser(foundUser);
         localStorage.setItem('opti_user', JSON.stringify(foundUser));
         return true;

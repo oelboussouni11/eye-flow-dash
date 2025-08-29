@@ -77,9 +77,7 @@ export const Employees: React.FC = () => {
         u.id === editingEmployee.id 
           ? { 
               ...u, 
-              ...employeeData,
-              // Create employee email with owner domain
-              email: `${employeeData.username}@${user?.email}`
+              ...employeeData
             }
           : u
       );
@@ -88,8 +86,7 @@ export const Employees: React.FC = () => {
         emp.id === editingEmployee.id 
           ? { 
               ...emp, 
-              ...employeeData,
-              email: `${employeeData.username}@${user?.email}`
+              ...employeeData
             }
           : emp
       ));
@@ -98,7 +95,6 @@ export const Employees: React.FC = () => {
       const newEmployee: Employee = {
         id: Date.now().toString(),
         ...employeeData,
-        email: `${employeeData.username}@${user?.email}`,
         ownerId: user?.id || '',
         createdAt: new Date().toISOString()
       };
