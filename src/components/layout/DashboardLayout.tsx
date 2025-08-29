@@ -43,7 +43,7 @@ export const DashboardLayout: React.FC = () => {
   };
 
   const isActive = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(path + '/');
+    return location.pathname === path;
   };
 
   return (
@@ -103,7 +103,7 @@ const AppSidebar: React.FC = () => {
   const { state } = useSidebar();
 
   const isActive = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(path + '/');
+    return location.pathname === path;
   };
 
   const filteredNavigation = navigation.filter(item => {

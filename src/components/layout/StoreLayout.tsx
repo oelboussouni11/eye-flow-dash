@@ -66,10 +66,7 @@ export const StoreLayout: React.FC = () => {
 
   const isActive = (path: string) => {
     const actualPath = path.replace(':storeId', storeId || '');
-    if (actualPath === `/store/${storeId}`) {
-      return location.pathname === actualPath;
-    }
-    return location.pathname.startsWith(actualPath);
+    return location.pathname === actualPath;
   };
 
   return (
@@ -154,10 +151,7 @@ const StoreSidebar: React.FC = () => {
 
   const isActive = (path: string) => {
     const actualPath = path.replace(':storeId', storeId || '');
-    if (actualPath === `/store/${storeId}`) {
-      return location.pathname === actualPath;
-    }
-    return location.pathname.startsWith(actualPath);
+    return location.pathname === actualPath;
   };
 
   return (
