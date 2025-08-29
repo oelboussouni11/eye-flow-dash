@@ -43,6 +43,27 @@ export interface StockMovement {
   createdAt: string;
 }
 
+export interface LensOrder {
+  id: string;
+  orderNumber: string;
+  clientId: string;
+  clientName: string;
+  prescription: string;
+  lensType: 'single' | 'bifocal' | 'progressive' | 'reading';
+  material: string;
+  coating?: string[];
+  status: 'pending' | 'in_progress' | 'ready' | 'delivered' | 'cancelled';
+  orderDate: string;
+  expectedDate: string;
+  deliveredDate?: string;
+  totalAmount: number;
+  notes?: string;
+  storeId: string;
+  employeeId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const DEFAULT_CATEGORIES: Omit<Category, 'id' | 'storeId' | 'createdAt' | 'updatedAt'>[] = [
   {
     name: 'Lunettes',
