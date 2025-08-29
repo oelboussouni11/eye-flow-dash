@@ -67,11 +67,27 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleCreateStore = () => {
+    if (!isOwner && !user?.permissions?.stores?.includes('create')) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to create stores",
+        variant: "destructive"
+      });
+      return;
+    }
     setEditingStore(null);
     setIsModalOpen(true);
   };
 
   const handleEditStore = (store: Store) => {
+    if (!isOwner && !user?.permissions?.stores?.includes('update')) {
+      toast({
+        title: "Access Denied", 
+        description: "You don't have permission to edit stores",
+        variant: "destructive"
+      });
+      return;
+    }
     setEditingStore(store);
     setIsModalOpen(true);
   };
@@ -108,6 +124,14 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleDeleteStore = (storeId: string) => {
+    if (!isOwner && !user?.permissions?.stores?.includes('delete')) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to delete stores", 
+        variant: "destructive"
+      });
+      return;
+    }
     setDeletingStoreId(storeId);
   };
 
@@ -160,7 +184,7 @@ export const Dashboard: React.FC = () => {
           </p>
         </div>
         
-        {isOwner && (
+        {(isOwner || user?.permissions?.stores?.includes('create')) && (
           <Button 
             variant="primary" 
             onClick={handleCreateStore}
@@ -223,12 +247,12 @@ export const Dashboard: React.FC = () => {
                   : 'Try adjusting your search terms'
                 }
               </p>
-              {isOwner && stores.length === 0 && (
-                <Button variant="primary" onClick={handleCreateStore}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create First Store
-                </Button>
-              )}
+          {stores.length === 0 && (isOwner || user?.permissions?.stores?.includes('create')) && (
+            <Button variant="primary" onClick={handleCreateStore}>
+              <Plus className="w-4 h-4 mr-2" />
+              Create First Store
+            </Button>
+          )}
             </div>
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -236,10 +260,10 @@ export const Dashboard: React.FC = () => {
                 <StoreCard
                   key={store.id}
                   store={store}
-                  onEdit={handleEditStore}
-                  onDelete={handleDeleteStore}
+                  onEdit={(isOwner || user?.permissions?.stores?.includes('update')) ? handleEditStore : undefined}
+                  onDelete={(isOwner || user?.permissions?.stores?.includes('delete')) ? handleDeleteStore : undefined}
                   onView={handleViewStore}
-                  canEdit={isOwner}
+                  canEdit={isOwner || user?.permissions?.stores?.includes('update')}
                 />
               ))}
             </div>

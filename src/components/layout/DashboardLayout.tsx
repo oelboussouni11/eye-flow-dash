@@ -28,7 +28,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
-  { name: 'Stores', href: '/dashboard/stores', icon: Store, ownerOnly: true },
+  { name: 'Stores', href: '/dashboard/stores', icon: Store, requiredPermission: 'stores' },
   { name: 'Employees', href: '/dashboard/employees', icon: Users, ownerOnly: true },
 ];
 
@@ -106,9 +106,13 @@ const AppSidebar: React.FC = () => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
-  const filteredNavigation = navigation.filter(item => 
-    !item.ownerOnly || isOwner
-  );
+  const filteredNavigation = navigation.filter(item => {
+    if (item.ownerOnly && !isOwner) return false;
+    if (item.requiredPermission && !isOwner) {
+      return user?.permissions?.[item.requiredPermission as keyof typeof user.permissions]?.length > 0;
+    }
+    return true;
+  });
 
   return (
     <Sidebar collapsible="icon">
