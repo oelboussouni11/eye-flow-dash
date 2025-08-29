@@ -140,4 +140,16 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* White calendar icons for date inputs */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(100%);
+    cursor: pointer;
+  }
+
+  input[type="date"]::-webkit-inner-spin-button,
+  input[type="date"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 }
