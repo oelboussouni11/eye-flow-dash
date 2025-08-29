@@ -10,7 +10,8 @@ import {
   Bell,
   Search,
   ShoppingCart,
-  BarChart3
+  BarChart3,
+  Contact
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -140,44 +141,102 @@ export const StoreLayout: React.FC = () => {
                   Back to Dashboard
                 </Button>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 z-10" />
                   <Input 
                     placeholder="Search products, clients, lenses..." 
-                    className="pl-10 w-64 bg-background/50"
+                    className="pl-10 w-72 bg-background border-border focus:ring-2 focus:ring-primary/20 transition-all"
                     value={globalSearch}
                     onChange={(e) => setGlobalSearch(e.target.value)}
                     onFocus={() => globalSearch.length > 2 && setShowSearchResults(true)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setShowSearchResults(false);
+                        setGlobalSearch('');
+                      }
+                    }}
                   />
                   
                   {/* Search Results Dropdown */}
                   {showSearchResults && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-50 max-h-80 overflow-y-auto">
-                      {searchResults.map((result, index) => (
-                        <div
-                          key={index}
-                          className="p-3 hover:bg-accent cursor-pointer border-b border-border last:border-b-0"
-                          onClick={() => handleSearchResultClick(result)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium text-sm">{result.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {result.type === 'product' && `SKU: ${result.sku} | Stock: ${result.stock}`}
-                                {result.type === 'contact-lens' && `${result.brand} | Stock: ${result.stock}`}
-                                {result.type === 'client' && result.email}
-                              </p>
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-96 overflow-hidden">
+                      <div className="p-2 border-b border-border bg-muted/50">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {searchResults.length > 0 ? `${searchResults.length} results found` : 'No results found'}
+                        </p>
+                      </div>
+                      
+                      <div className="max-h-80 overflow-y-auto">
+                        {searchResults.length > 0 ? (
+                          searchResults.map((result, index) => (
+                            <div
+                              key={index}
+                              className="p-3 hover:bg-accent cursor-pointer transition-colors border-b border-border/50 last:border-b-0 group"
+                              onClick={() => handleSearchResultClick(result)}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center group-hover:bg-accent-foreground/10 transition-colors">
+                                  {result.type === 'product' && <Package className="w-4 h-4 text-primary" />}
+                                  {result.type === 'contact-lens' && <Contact className="w-4 h-4 text-accent" />}
+                                  {result.type === 'client' && <Users className="w-4 h-4 text-secondary" />}
+                                </div>
+                                
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <p className="font-medium text-sm text-foreground truncate">
+                                      {result.name}
+                                    </p>
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-xs text-muted-foreground capitalize bg-muted px-2 py-1 rounded">
+                                        {result.type.replace('-', ' ')}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <p className="text-xs text-muted-foreground">
+                                      {result.type === 'product' && (
+                                        <>
+                                          <span className="font-medium">SKU:</span> {result.sku} • 
+                                          <span className="font-medium">Stock:</span> 
+                                          <span className={result.stock <= result.minStock ? 'text-warning' : 'text-green-600'}>
+                                            {result.stock}
+                                          </span>
+                                        </>
+                                      )}
+                                      {result.type === 'contact-lens' && (
+                                        <>
+                                          <span className="font-medium">Brand:</span> {result.brand} • 
+                                          <span className="font-medium">Stock:</span> 
+                                          <span className={result.stock <= result.minStock ? 'text-warning' : 'text-green-600'}>
+                                            {result.stock}
+                                          </span>
+                                        </>
+                                      )}
+                                      {result.type === 'client' && (
+                                        <>
+                                          <span className="font-medium">Email:</span> {result.email}
+                                        </>
+                                      )}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-xs text-muted-foreground capitalize">
-                              {result.type.replace('-', ' ')}
-                            </div>
+                          ))
+                        ) : globalSearch.length > 2 ? (
+                          <div className="p-6 text-center">
+                            <Package className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                            <p className="text-sm text-muted-foreground">No results found for "{globalSearch}"</p>
+                            <p className="text-xs text-muted-foreground mt-1">Try different keywords</p>
                           </div>
-                        </div>
-                      ))}
-                      {searchResults.length === 0 && (
-                        <div className="p-3 text-sm text-muted-foreground text-center">
-                          No results found
-                        </div>
-                      )}
+                        ) : null}
+                      </div>
+                      
+                      <div className="p-2 border-t border-border bg-muted/30 text-center">
+                        <p className="text-xs text-muted-foreground">
+                          Press <kbd className="px-1 py-0.5 bg-background border rounded text-xs">Esc</kbd> to close
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
