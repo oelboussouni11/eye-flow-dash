@@ -193,7 +193,14 @@ export const StoreClients: React.FC = () => {
       'street', 'city', 'state', 'zipCode', 'country',
       'emergencyContactName', 'emergencyContactPhone', 'emergencyContactRelationship',
       'insuranceProvider', 'insurancePolicyNumber', 'insuranceGroupNumber',
-      'status', 'preferredContactMethod', 'tags'
+      'status', 'preferredContactMethod', 'tags',
+      // Optical Info
+      'rightEyeSphere', 'rightEyeCylinder', 'rightEyeAxis', 'rightEyeAdd',
+      'leftEyeSphere', 'leftEyeCylinder', 'leftEyeAxis', 'leftEyeAdd',
+      'pupillaryDistance', 'prescriptionDate', 'prescribedBy',
+      'rightEyeUncorrected', 'leftEyeUncorrected', 'rightEyeCorrected', 'leftEyeCorrected',
+      'intraocularPressureRight', 'intraocularPressureLeft', 'pressureTestDate',
+      'lastExamDate', 'nextAppointment', 'opticalNotes'
     ];
 
     const csvData = clients.map(client => [
@@ -215,7 +222,29 @@ export const StoreClients: React.FC = () => {
       client.insurance?.groupNumber || '',
       client.status,
       client.preferredContactMethod,
-      client.tags.join(';')
+      client.tags.join(';'),
+      // Optical Info
+      client.opticalInfo?.currentPrescription?.rightEye?.sphere || '',
+      client.opticalInfo?.currentPrescription?.rightEye?.cylinder || '',
+      client.opticalInfo?.currentPrescription?.rightEye?.axis || '',
+      client.opticalInfo?.currentPrescription?.rightEye?.add || '',
+      client.opticalInfo?.currentPrescription?.leftEye?.sphere || '',
+      client.opticalInfo?.currentPrescription?.leftEye?.cylinder || '',
+      client.opticalInfo?.currentPrescription?.leftEye?.axis || '',
+      client.opticalInfo?.currentPrescription?.leftEye?.add || '',
+      client.opticalInfo?.currentPrescription?.pd || '',
+      client.opticalInfo?.currentPrescription?.prescriptionDate || '',
+      client.opticalInfo?.currentPrescription?.prescribedBy || '',
+      client.opticalInfo?.visualAcuity?.rightEyeUncorrected || '',
+      client.opticalInfo?.visualAcuity?.leftEyeUncorrected || '',
+      client.opticalInfo?.visualAcuity?.rightEyeCorrected || '',
+      client.opticalInfo?.visualAcuity?.leftEyeCorrected || '',
+      client.opticalInfo?.intraocularPressure?.rightEye || '',
+      client.opticalInfo?.intraocularPressure?.leftEye || '',
+      client.opticalInfo?.intraocularPressure?.testDate || '',
+      client.opticalInfo?.lastExamDate || '',
+      client.opticalInfo?.nextAppointment || '',
+      client.opticalInfo?.notes || ''
     ]);
 
     const csvContent = [csvHeaders, ...csvData]
@@ -245,7 +274,14 @@ export const StoreClients: React.FC = () => {
       'street', 'city', 'state', 'zipCode', 'country',
       'emergencyContactName', 'emergencyContactPhone', 'emergencyContactRelationship',
       'insuranceProvider', 'insurancePolicyNumber', 'insuranceGroupNumber',
-      'status', 'preferredContactMethod', 'tags'
+      'status', 'preferredContactMethod', 'tags',
+      // Optical Info
+      'rightEyeSphere', 'rightEyeCylinder', 'rightEyeAxis', 'rightEyeAdd',
+      'leftEyeSphere', 'leftEyeCylinder', 'leftEyeAxis', 'leftEyeAdd',
+      'pupillaryDistance', 'prescriptionDate', 'prescribedBy',
+      'rightEyeUncorrected', 'leftEyeUncorrected', 'rightEyeCorrected', 'leftEyeCorrected',
+      'intraocularPressureRight', 'intraocularPressureLeft', 'pressureTestDate',
+      'lastExamDate', 'nextAppointment', 'opticalNotes'
     ];
 
     const templateRow = [
@@ -253,7 +289,14 @@ export const StoreClients: React.FC = () => {
       '123 Main St', 'Anytown', 'CA', '12345', 'USA',
       'Jane Doe', '+1234567891', 'Spouse',
       'Vision Insurance Co', 'POL123456', 'GRP789',
-      'active', 'email', 'VIP;Regular Customer'
+      'active', 'email', 'VIP;Regular Customer',
+      // Optical Info Examples
+      '-2.50', '-0.75', '90', '1.25',     // Right eye
+      '-2.25', '-1.00', '85', '1.50',     // Left eye
+      '63', '2024-01-15', 'Dr. Smith',    // PD, date, doctor
+      '20/40', '20/30', '20/20', '20/20', // Visual acuity
+      '15', '16', '2024-01-15',           // IOP
+      '2024-01-15', '2024-07-15', 'Patient has astigmatism' // Dates and notes
     ];
 
     const csvContent = [templateHeaders, templateRow]
@@ -342,6 +385,39 @@ export const StoreClients: React.FC = () => {
               status: (values[16] === 'active' || values[16] === 'inactive') ? values[16] as 'active' | 'inactive' : 'active',
               preferredContactMethod: (values[17] === 'email' || values[17] === 'phone' || values[17] === 'sms') ? values[17] as 'email' | 'phone' | 'sms' : 'email',
               tags: values[18] ? values[18].split(';').filter(tag => tag.trim()) : [],
+              opticalInfo: {
+                currentPrescription: (values[19] || values[20] || values[21] || values[22] || values[23] || values[24] || values[25] || values[26] || values[27] || values[28] || values[29]) ? {
+                  rightEye: {
+                    sphere: values[19] ? parseFloat(values[19]) : undefined,
+                    cylinder: values[20] ? parseFloat(values[20]) : undefined,
+                    axis: values[21] ? parseFloat(values[21]) : undefined,
+                    add: values[22] ? parseFloat(values[22]) : undefined
+                  },
+                  leftEye: {
+                    sphere: values[23] ? parseFloat(values[23]) : undefined,
+                    cylinder: values[24] ? parseFloat(values[24]) : undefined,
+                    axis: values[25] ? parseFloat(values[25]) : undefined,
+                    add: values[26] ? parseFloat(values[26]) : undefined
+                  },
+                  pd: values[27] ? parseFloat(values[27]) : undefined,
+                  prescriptionDate: values[28] || '',
+                  prescribedBy: values[29] || ''
+                } : undefined,
+                visualAcuity: (values[30] || values[31] || values[32] || values[33]) ? {
+                  rightEyeUncorrected: values[30] || '',
+                  leftEyeUncorrected: values[31] || '',
+                  rightEyeCorrected: values[32] || '',
+                  leftEyeCorrected: values[33] || ''
+                } : undefined,
+                intraocularPressure: (values[34] || values[35] || values[36]) ? {
+                  rightEye: values[34] ? parseFloat(values[34]) : undefined,
+                  leftEye: values[35] ? parseFloat(values[35]) : undefined,
+                  testDate: values[36] || ''
+                } : undefined,
+                lastExamDate: values[37] || '',
+                nextAppointment: values[38] || '',
+                notes: values[39] || ''
+              },
               prescriptionHistory: [],
               clientHistory: [],
               totalSpent: 0,
