@@ -1,11 +1,195 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Plus, Search, Filter, ShoppingCart } from 'lucide-react';
+import { Plus, Search, Filter, TrendingUp, DollarSign, ShoppingBag, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { SaleFormModal } from '@/components/sales/SaleFormModal';
+import { SalesTable } from '@/components/sales/SalesTable';
+import { useAuth } from '@/contexts/AuthContext';
+import { Sale, SaleFormData } from '@/types/sales';
+import { Product, ContactLens, DEFAULT_CATEGORIES } from '@/types/inventory';
+import { toast } from 'sonner';
 
 export const StoreSales: React.FC = () => {
   const { storeId } = useParams();
+  const { user } = useAuth();
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [contactLenses, setContactLenses] = useState<ContactLens[]>([]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Load sample data
+  useEffect(() => {
+    // Sample products
+    setProducts([
+      {
+        id: '1',
+        name: 'Daily Comfort Drops',
+        description: 'Gentle daily comfort eye drops',
+        sku: 'DCD001',
+        categoryId: '1',
+        price: 15.99,
+        cost: 8.99,
+        stock: 50,
+        minStock: 10,
+        brand: 'OptiCare',
+        images: [],
+        attributes: {},
+        isActive: true,
+        storeId: storeId || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '2',
+        name: 'Blue Light Glasses',
+        description: 'Blue light blocking glasses',
+        sku: 'BLG001',
+        categoryId: '2',
+        price: 89.99,
+        cost: 45.99,
+        stock: 25,
+        minStock: 5,
+        brand: 'TechVision',
+        images: [],
+        attributes: {},
+        isActive: true,
+        storeId: storeId || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ]);
+
+    // Sample contact lenses
+    setContactLenses([
+      {
+        id: '1',
+        name: 'Daily Comfort',
+        category: 'lentilles',
+        brand: 'ClearVision',
+        type: 'daily',
+        material: 'Silicone Hydrogel',
+        diameter: 14.2,
+        baseCurve: 8.5,
+        power: '0.00',
+        stock: 100,
+        minStock: 20,
+        price: 35.99,
+        cost: 18.99,
+        images: [],
+        isActive: true,
+        storeId: storeId || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ]);
+
+    // Sample sales
+    setSales([
+      {
+        id: '1',
+        saleNumber: 'SALE-001',
+        clientName: 'John Smith',
+        clientEmail: 'john@example.com',
+        items: [
+          {
+            id: '1',
+            productId: '1',
+            productName: 'Daily Comfort Drops',
+            productType: 'product',
+            quantity: 2,
+            unitPrice: 15.99,
+            totalPrice: 31.98
+          }
+        ],
+        subtotal: 31.98,
+        tax: 5.12,
+        discount: 0,
+        total: 37.10,
+        paymentMethod: 'card',
+        status: 'completed',
+        createdAt: new Date(),
+        createdBy: user?.id || '',
+        storeId: storeId || ''
+      }
+    ]);
+  }, [storeId, user]);
+
+  const generateSaleNumber = () => {
+    const timestamp = Date.now().toString().slice(-6);
+    return `SALE-${timestamp}`;
+  };
+
+  const handleCreateSale = (formData: SaleFormData) => {
+    const saleItems = formData.items.map((item, index) => ({
+      ...item,
+      id: `item-${index}`,
+      totalPrice: item.quantity * item.unitPrice
+    }));
+
+    const subtotal = saleItems.reduce((sum, item) => sum + item.totalPrice, 0);
+    const discountAmount = (subtotal * formData.discount) / 100;
+    const taxRate = 0.16;
+    const taxAmount = (subtotal - discountAmount) * taxRate;
+    const total = subtotal - discountAmount + taxAmount;
+
+    const newSale: Sale = {
+      id: Date.now().toString(),
+      saleNumber: generateSaleNumber(),
+      clientName: formData.clientName,
+      clientEmail: formData.clientEmail,
+      items: saleItems,
+      subtotal,
+      tax: taxAmount,
+      discount: discountAmount,
+      total,
+      paymentMethod: formData.paymentMethod,
+      status: 'completed',
+      notes: formData.notes,
+      createdAt: new Date(),
+      createdBy: user?.id || '',
+      storeId: storeId || ''
+    };
+
+    setSales([newSale, ...sales]);
+    toast.success('Sale completed successfully!');
+  };
+
+  const handleViewSale = (sale: Sale) => {
+    toast.info(`Viewing sale ${sale.saleNumber}`);
+  };
+
+  const handleRefundSale = (saleId: string) => {
+    setSales(sales.map(sale => 
+      sale.id === saleId 
+        ? { ...sale, status: 'refunded' as const }
+        : sale
+    ));
+    toast.success('Sale refunded successfully');
+  };
+
+  const handlePrintReceipt = (sale: Sale) => {
+    toast.info(`Printing receipt for ${sale.saleNumber}`);
+  };
+
+  const filteredSales = sales.filter(sale =>
+    sale.saleNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    sale.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    sale.clientEmail?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalSales = sales.length;
+  const totalRevenue = sales.reduce((sum, sale) => 
+    sale.status === 'completed' ? sum + sale.total : sum, 0
+  );
+  const avgSaleValue = totalSales > 0 ? totalRevenue / totalSales : 0;
+  const todaySales = sales.filter(sale => {
+    const today = new Date();
+    const saleDate = new Date(sale.createdAt);
+    return saleDate.toDateString() === today.toDateString();
+  }).length;
 
   return (
     <div className="space-y-6">
@@ -17,16 +201,68 @@ export const StoreSales: React.FC = () => {
           </p>
         </div>
         
-        <Button variant="primary" className="flex items-center gap-2">
+        <Button 
+          variant="default"
+          className="flex items-center gap-2"
+          onClick={() => setIsCreateModalOpen(true)}
+        >
           <Plus className="w-4 h-4" />
           New Sale
         </Button>
       </div>
 
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+            <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalSales}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Sale Value</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${avgSaleValue.toFixed(2)}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Today's Sales</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{todaySales}</div>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input placeholder="Search sales..." className="pl-10" />
+          <Input 
+            placeholder="Search sales..." 
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
         <Button variant="outline" className="flex items-center gap-2">
           <Filter className="w-4 h-4" />
@@ -34,19 +270,20 @@ export const StoreSales: React.FC = () => {
         </Button>
       </div>
 
-      <div className="text-center py-12">
-        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-          <ShoppingCart className="w-8 h-8 text-muted-foreground" />
-        </div>
-        <h3 className="text-lg font-medium text-foreground mb-2">No sales yet</h3>
-        <p className="text-muted-foreground mb-4">
-          Create your first sale to start generating revenue
-        </p>
-        <Button variant="primary">
-          <Plus className="w-4 h-4 mr-2" />
-          Create First Sale
-        </Button>
-      </div>
+      <SalesTable
+        sales={filteredSales}
+        onViewSale={handleViewSale}
+        onRefundSale={handleRefundSale}
+        onPrintReceipt={handlePrintReceipt}
+      />
+
+      <SaleFormModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreateSale}
+        products={products}
+        contactLenses={contactLenses}
+      />
     </div>
   );
 };
