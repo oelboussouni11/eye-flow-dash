@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, RefreshCw, Printer, Edit, Trash2, CreditCard } from 'lucide-react';
+import { Eye, Printer, Edit, Trash2, CreditCard } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,6 @@ import { Sale } from '@/types/sales';
 interface SalesTableProps {
   sales: Sale[];
   onViewSale: (sale: Sale) => void;
-  onRefundSale: (saleId: string) => void;
   onPrintReceipt: (sale: Sale) => void;
   onDeleteSale: (saleId: string) => void;
   onAddPayment: (sale: Sale) => void;
@@ -19,7 +18,6 @@ interface SalesTableProps {
 export const SalesTable: React.FC<SalesTableProps> = ({
   sales,
   onViewSale,
-  onRefundSale,
   onPrintReceipt,
   onDeleteSale,
   onAddPayment
@@ -95,8 +93,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                     variant={
                       sale.status === 'paid' ? 'default' : 
                       sale.status === 'partial' ? 'secondary' :
-                      sale.status === 'unpaid' ? 'outline' : 
-                      'destructive'
+                      'outline'
                     }
                   >
                     {sale.status}
@@ -121,7 +118,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                     >
                       <Printer className="w-4 h-4" />
                     </Button>
-                    {sale.remainingAmount > 0 && sale.status !== 'refunded' && (
+                    {sale.remainingAmount > 0 && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -130,21 +127,11 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                         <CreditCard className="w-4 h-4" />
                       </Button>
                     )}
-                    {sale.status !== 'refunded' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onRefundSale(sale.id)}
-                      >
-                        <RefreshCw className="w-4 h-4" />
-                      </Button>
-                    )}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
                           variant="outline"
                           size="sm"
-                          disabled={sale.status !== 'refunded'}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

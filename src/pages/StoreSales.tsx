@@ -255,8 +255,8 @@ export const StoreSales: React.FC = () => {
 
   const handleDeleteSale = (saleId: string) => {
     const sale = sales.find(s => s.id === saleId);
-    if (!sale || sale.status !== 'refunded') {
-      toast.error('Only refunded sales can be deleted');
+    if (!sale) {
+      toast.error('Sale not found');
       return;
     }
 
@@ -281,14 +281,6 @@ export const StoreSales: React.FC = () => {
     toast.success('Sale deleted successfully');
   };
 
-  const handleRefundSale = (saleId: string) => {
-    setSales(sales.map(sale => 
-      sale.id === saleId 
-        ? { ...sale, status: 'refunded' as const }
-        : sale
-    ));
-    toast.success('Sale refunded successfully');
-  };
 
   const handleAddPayment = (sale: Sale) => {
     setSelectedSale(sale);
@@ -342,9 +334,7 @@ export const StoreSales: React.FC = () => {
   );
 
   const totalSales = sales.length;
-  const totalRevenue = sales.reduce((sum, sale) => 
-    sale.status !== 'refunded' ? sum + sale.paidAmount : sum, 0
-  );
+  const totalRevenue = sales.reduce((sum, sale) => sum + sale.paidAmount, 0);
   const avgSaleValue = totalSales > 0 ? totalRevenue / totalSales : 0;
   const todaySales = sales.filter(sale => {
     const today = new Date();
@@ -434,7 +424,6 @@ export const StoreSales: React.FC = () => {
       <SalesTable
         sales={filteredSales}
         onViewSale={handleViewSale}
-        onRefundSale={handleRefundSale}
         onPrintReceipt={handlePrintReceipt}
         onDeleteSale={handleDeleteSale}
         onAddPayment={handleAddPayment}

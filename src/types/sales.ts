@@ -30,7 +30,7 @@ export interface Sale {
   paidAmount: number;
   remainingAmount: number;
   payments: PaymentRecord[];
-  status: 'paid' | 'partial' | 'unpaid' | 'refunded';
+  status: 'paid' | 'partial' | 'unpaid';
   notes?: string;
   createdAt: Date;
   createdBy: string;
