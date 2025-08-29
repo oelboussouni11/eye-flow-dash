@@ -39,7 +39,6 @@ const storeNavigation = [
   { name: 'Inventory', href: '/store/:storeId/inventory', icon: Package },
   { name: 'Sales', href: '/store/:storeId/sales', icon: ShoppingCart },
   { name: 'Invoices', href: '/store/:storeId/invoices', icon: FileText },
-  { name: 'Subscription', href: '/store/:storeId/subscription', icon: CreditCard },
 ];
 
 export const StoreLayout: React.FC = () => {

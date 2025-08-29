@@ -5,7 +5,8 @@ import {
   Users, 
   LogOut, 
   Search,
-  BarChart3
+  BarChart3,
+  CreditCard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
   { name: 'Stores', href: '/dashboard/stores', icon: Store, requiredPermission: 'stores' },
   { name: 'Employees', href: '/dashboard/employees', icon: Users, ownerOnly: true },
+  { name: 'Subscription', href: '/dashboard/subscription', icon: CreditCard },
 ];
 
 export const DashboardLayout: React.FC = () => {
@@ -125,7 +127,7 @@ const AppSidebar: React.FC = () => {
             </div>
             {state === "expanded" && (
               <div>
-                <h2 className="font-bold text-sidebar-foreground">OptiSaaS</h2>
+                <h2 className="font-bold text-sidebar-foreground">Beom Optic</h2>
                 <p className="text-xs text-sidebar-foreground/60">Optical Management</p>
               </div>
             )}
