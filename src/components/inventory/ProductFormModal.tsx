@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Upload, X, Image } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,7 @@ const productSchema = z.object({
   supplier: z.string().optional(),
   brand: z.string().optional(),
   barcode: z.string().optional(),
+  images: z.array(z.string()).default([]),
   isActive: z.boolean(),
 });
 
@@ -61,6 +63,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   product,
   categories
 }) => {
+  const [uploadedImages, setUploadedImages] = useState<string[]>(product?.images || []);
+  
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -75,19 +79,40 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       supplier: product?.supplier || '',
       brand: product?.brand || '',
       barcode: product?.barcode || '',
+      images: product?.images || [],
       isActive: product?.isActive ?? true,
     },
   });
 
   const handleSubmit = (data: ProductFormData) => {
-    onSubmit(data);
+    onSubmit({ ...data, images: uploadedImages });
     onClose();
     form.reset();
+    setUploadedImages([]);
   };
 
   const handleClose = () => {
     onClose();
     form.reset();
+    setUploadedImages(product?.images || []);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        setUploadedImages(prev => [...prev, result]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
   };
 
   // Filter out "Verres" category as it's handled separately
@@ -304,6 +329,65 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   </FormItem>
                 )}
               />
+            </div>
+
+            {/* Image Upload Section */}
+            <div className="space-y-4">
+              <FormLabel>Product Images</FormLabel>
+              
+              {/* Upload Button */}
+              <div className="flex items-center gap-4">
+                <label htmlFor="image-upload" className="cursor-pointer">
+                  <div className="flex items-center gap-2 px-4 py-2 border border-input rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
+                    <Upload className="w-4 h-4" />
+                    <span className="text-sm">Upload Images</span>
+                  </div>
+                  <input
+                    id="image-upload"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleImageUpload}
+                  />
+                </label>
+                <span className="text-sm text-muted-foreground">
+                  {uploadedImages.length}/5 images
+                </span>
+              </div>
+
+              {/* Image Preview Grid */}
+              {uploadedImages.length > 0 && (
+                <div className="grid grid-cols-3 gap-4">
+                  {uploadedImages.map((image, index) => (
+                    <div key={index} className="relative group">
+                      <div className="aspect-square border border-border rounded-lg overflow-hidden bg-muted">
+                        <img
+                          src={image}
+                          alt={`Product image ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Empty State */}
+              {uploadedImages.length === 0 && (
+                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
+                  <Image className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-sm text-muted-foreground">No images uploaded</p>
+                  <p className="text-xs text-muted-foreground">Upload up to 5 images</p>
+                </div>
+              )}
             </div>
 
             <FormField
