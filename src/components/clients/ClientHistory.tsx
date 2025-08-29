@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Calendar, DollarSign, User, Activity } from 'lucide-react';
+import { Calendar, DollarSign, User, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,13 +8,11 @@ import { ClientHistory as ClientHistoryType } from '@/types/client';
 interface ClientHistoryProps {
   history: ClientHistoryType[];
   clientId: string;
-  canEdit?: boolean;
 }
 
 export const ClientHistory: React.FC<ClientHistoryProps> = ({
   history,
-  clientId,
-  canEdit = true
+  clientId
 }) => {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
@@ -73,15 +71,9 @@ export const ClientHistory: React.FC<ClientHistoryProps> = ({
             <Activity className="w-8 h-8 text-muted-foreground" />
           </div>
           <h3 className="text-lg font-medium text-foreground mb-2">No History</h3>
-          <p className="text-muted-foreground mb-4">
-            This client doesn't have any activity history yet
+          <p className="text-muted-foreground">
+            History will be automatically added when the client makes purchases or visits
           </p>
-          {canEdit && (
-            <Button variant="primary">
-              <Plus className="w-4 h-4 mr-2" />
-              Add History Entry
-            </Button>
-          )}
         </CardContent>
       </Card>
     );
@@ -91,12 +83,9 @@ export const ClientHistory: React.FC<ClientHistoryProps> = ({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Client History</h3>
-        {canEdit && (
-          <Button variant="primary" size="sm">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Entry
-          </Button>
-        )}
+        <span className="text-sm text-muted-foreground">
+          Auto-generated from system activities
+        </span>
       </div>
 
       <div className="space-y-4">

@@ -417,7 +417,6 @@ export const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
             <ClientHistory 
               history={client.clientHistory}
               clientId={client.id}
-              canEdit={canEdit}
             />
           </TabsContent>
         </Tabs>
