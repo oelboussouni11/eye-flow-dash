@@ -48,11 +48,11 @@ export const StoreSubscription: React.FC = () => {
 
   // Bank details for payment
   const bankDetails = {
-    bankName: 'OptiSoft Bank',
-    accountName: 'OptiSoft SaaS Solutions',
+    bankName: 'Beom Optic Bank',
+    accountName: 'Beom Optic SaaS Solutions',
     iban: 'GB82 WEST 1234 5698 7654 32',
     bic: 'WESTGB2L',
-    reference: `STORE-${storeId}`
+    reference: `BEOM-${storeId}`
   };
 
   useEffect(() => {
@@ -231,11 +231,18 @@ export const StoreSubscription: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">SaaS Subscription</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage your subscription and payment records for {store.name}
-        </p>
+      <div className="flex items-center gap-4 mb-6">
+        <img 
+          src="/lovable-uploads/059cf789-9db7-4150-939c-2ced0b179efb.png" 
+          alt="Beom Optic Logo" 
+          className="w-12 h-12"
+        />
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Beom Optic SaaS Subscription</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage your subscription and payment records for {store.name}
+          </p>
+        </div>
       </div>
 
       {/* Subscription Overview */}
