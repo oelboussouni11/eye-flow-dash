@@ -44,6 +44,7 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
     items: [],
     discount: 0,
     paymentMethod: 'cash',
+    initialPayment: 0,
     notes: ''
   });
   
@@ -65,7 +66,8 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
           unitPrice: item.unitPrice
         })),
         discount: (editSale.discount / editSale.subtotal) * 100,
-        paymentMethod: editSale.paymentMethod,
+        paymentMethod: editSale.payments[0]?.method || 'cash',
+        initialPayment: editSale.amountPaid,
         notes: editSale.notes || ''
       });
       
@@ -76,6 +78,7 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
         items: [],
         discount: 0,
         paymentMethod: 'cash',
+        initialPayment: 0,
         notes: ''
       });
       setSelectedClient(null);
@@ -151,6 +154,7 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
       items: [],
       discount: 0,
       paymentMethod: 'cash',
+      initialPayment: 0,
       notes: ''
     });
     onClose();

@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SaleFormModal } from '@/components/sales/SaleFormModal';
 import { SalesTable } from '@/components/sales/SalesTable';
 import { SaleViewModal } from '@/components/sales/SaleViewModal';
+import { PaymentModal } from '@/components/sales/PaymentModal';
 import { useAuth } from '@/contexts/AuthContext';
-import { Sale, SaleFormData } from '@/types/sales';
+import { Sale, SaleFormData, PaymentRecord } from '@/types/sales';
 import { Product, ContactLens, DEFAULT_CATEGORIES } from '@/types/inventory';
 import { toast } from 'sonner';
 
@@ -20,6 +21,7 @@ export const StoreSales: React.FC = () => {
   const [contactLenses, setContactLenses] = useState<ContactLens[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -128,7 +130,17 @@ export const StoreSales: React.FC = () => {
         tax: 5.12,
         discount: 0,
         total: 37.10,
-        paymentMethod: 'card',
+        amountPaid: 37.10,
+        remainingBalance: 0,
+        payments: [
+          {
+            id: '1',
+            amount: 37.10,
+            method: 'card',
+            date: new Date(),
+            notes: 'Initial payment'
+          }
+        ],
         status: 'completed',
         createdAt: new Date(),
         createdBy: user?.id || '',
@@ -154,6 +166,18 @@ export const StoreSales: React.FC = () => {
     const taxRate = 0.16;
     const taxAmount = (subtotal - discountAmount) * taxRate;
     const total = subtotal - discountAmount + taxAmount;
+    
+    const initialPayment = formData.initialPayment || 0;
+    const remainingBalance = total - initialPayment;
+    const status = remainingBalance > 0 ? 'partial' : 'completed';
+
+    const payments: PaymentRecord[] = initialPayment > 0 ? [{
+      id: '1',
+      amount: initialPayment,
+      method: formData.paymentMethod,
+      date: new Date(),
+      notes: 'Initial payment'
+    }] : [];
 
     const newSale: Sale = {
       id: Date.now().toString(),
@@ -166,8 +190,10 @@ export const StoreSales: React.FC = () => {
       tax: taxAmount,
       discount: discountAmount,
       total,
-      paymentMethod: formData.paymentMethod,
-      status: 'completed',
+      amountPaid: initialPayment,
+      remainingBalance,
+      payments,
+      status,
       notes: formData.notes,
       createdAt: new Date(),
       createdBy: user?.id || '',
@@ -218,24 +244,28 @@ export const StoreSales: React.FC = () => {
 
   const handleDeleteSale = (saleId: string) => {
     const sale = sales.find(s => s.id === saleId);
-    if (sale) {
-      // Restore inventory
-      sale.items.forEach(saleItem => {
-        if (saleItem.productType === 'product') {
-          setProducts(prev => prev.map(product => 
-            product.id === saleItem.productId 
-              ? { ...product, stock: product.stock + saleItem.quantity }
-              : product
-          ));
-        } else {
-          setContactLenses(prev => prev.map(lens => 
-            lens.id === saleItem.productId 
-              ? { ...lens, stock: lens.stock + saleItem.quantity }
-              : lens
-          ));
-        }
-      });
+    if (!sale || sale.status !== 'refunded') {
+      toast.error('Only refunded sales can be deleted');
+      return;
     }
+
+    // Restore inventory
+    sale.items.forEach(saleItem => {
+      if (saleItem.productType === 'product') {
+        setProducts(prev => prev.map(product => 
+          product.id === saleItem.productId 
+            ? { ...product, stock: product.stock + saleItem.quantity }
+            : product
+        ));
+      } else {
+        setContactLenses(prev => prev.map(lens => 
+          lens.id === saleItem.productId 
+            ? { ...lens, stock: lens.stock + saleItem.quantity }
+            : lens
+        ));
+      }
+    });
+    
     setSales(sales.filter(sale => sale.id !== saleId));
     toast.success('Sale deleted successfully');
   };
@@ -247,6 +277,38 @@ export const StoreSales: React.FC = () => {
         : sale
     ));
     toast.success('Sale refunded successfully');
+  };
+
+  const handleAddPayment = (sale: Sale) => {
+    setSelectedSale(sale);
+    setIsPaymentModalOpen(true);
+  };
+
+  const handlePaymentSubmit = (saleId: string, payment: Omit<PaymentRecord, 'id' | 'date'>) => {
+    setSales(prev => prev.map(sale => {
+      if (sale.id === saleId) {
+        const newPayment: PaymentRecord = {
+          ...payment,
+          id: Date.now().toString(),
+          date: new Date()
+        };
+        
+        const newAmountPaid = sale.amountPaid + payment.amount;
+        const newRemainingBalance = sale.total - newAmountPaid;
+        const newStatus = newRemainingBalance <= 0 ? 'completed' : 'partial';
+        
+        return {
+          ...sale,
+          amountPaid: newAmountPaid,
+          remainingBalance: Math.max(0, newRemainingBalance),
+          payments: [...sale.payments, newPayment],
+          status: newStatus
+        };
+      }
+      return sale;
+    }));
+    
+    toast.success('Payment added successfully!');
   };
 
   const handlePrintReceipt = (sale: Sale) => {
@@ -355,6 +417,7 @@ export const StoreSales: React.FC = () => {
         onRefundSale={handleRefundSale}
         onPrintReceipt={handlePrintReceipt}
         onDeleteSale={handleDeleteSale}
+        onAddPayment={handleAddPayment}
       />
 
       <SaleFormModal
@@ -381,6 +444,16 @@ export const StoreSales: React.FC = () => {
         sale={selectedSale}
         onEdit={handleEditSale}
         onPrint={handlePrintReceipt}
+      />
+
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => {
+          setIsPaymentModalOpen(false);
+          setSelectedSale(null);
+        }}
+        sale={selectedSale}
+        onSubmit={handlePaymentSubmit}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, RefreshCw, Printer, Edit, Trash2 } from 'lucide-react';
+import { Eye, RefreshCw, Printer, Edit, Trash2, CreditCard } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,7 @@ interface SalesTableProps {
   onRefundSale: (saleId: string) => void;
   onPrintReceipt: (sale: Sale) => void;
   onDeleteSale: (saleId: string) => void;
+  onAddPayment: (sale: Sale) => void;
 }
 
 export const SalesTable: React.FC<SalesTableProps> = ({
@@ -20,31 +21,10 @@ export const SalesTable: React.FC<SalesTableProps> = ({
   onViewSale,
   onRefundSale,
   onPrintReceipt,
-  onDeleteSale
+  onDeleteSale,
+  onAddPayment
 }) => {
-  const getStatusBadge = (status: Sale['status']) => {
-    const variants = {
-      completed: 'default',
-      pending: 'secondary',
-      refunded: 'destructive'
-    } as const;
 
-    return (
-      <Badge variant={variants[status]}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
-  };
-
-  const getPaymentMethodLabel = (method: Sale['paymentMethod']) => {
-    const labels = {
-      cash: 'Cash',
-      card: 'Card',
-      transfer: 'Transfer',
-      cheque: 'Cheque'
-    };
-    return labels[method];
-  };
 
   if (sales.length === 0) {
     return (
@@ -74,8 +54,9 @@ export const SalesTable: React.FC<SalesTableProps> = ({
               <TableHead>Sale #</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Items</TableHead>
-              <TableHead>Payment</TableHead>
               <TableHead>Total</TableHead>
+              <TableHead>Paid</TableHead>
+              <TableHead>Balance</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Date</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -102,9 +83,25 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                     </p>
                   </div>
                 </TableCell>
-                <TableCell>{getPaymentMethodLabel(sale.paymentMethod)}</TableCell>
                 <TableCell className="font-medium">${sale.total.toFixed(2)}</TableCell>
-                <TableCell>{getStatusBadge(sale.status)}</TableCell>
+                <TableCell>${sale.amountPaid.toFixed(2)}</TableCell>
+                <TableCell>
+                  <span className={sale.remainingBalance > 0 ? 'text-red-600 font-medium' : 'text-green-600'}>
+                    ${sale.remainingBalance.toFixed(2)}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <Badge 
+                    variant={
+                      sale.status === 'completed' ? 'default' : 
+                      sale.status === 'partial' ? 'secondary' :
+                      sale.status === 'pending' ? 'outline' : 
+                      'destructive'
+                    }
+                  >
+                    {sale.status}
+                  </Badge>
+                </TableCell>
                 <TableCell>
                   {new Date(sale.createdAt).toLocaleDateString()}
                 </TableCell>
@@ -124,7 +121,16 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                     >
                       <Printer className="w-4 h-4" />
                     </Button>
-                    {sale.status === 'completed' && (
+                    {sale.remainingBalance > 0 && sale.status !== 'refunded' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onAddPayment(sale)}
+                      >
+                        <CreditCard className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {sale.status !== 'refunded' && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -138,6 +144,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                         <Button
                           variant="outline"
                           size="sm"
+                          disabled={sale.status !== 'refunded'}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

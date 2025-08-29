@@ -8,6 +8,14 @@ export interface SaleItem {
   totalPrice: number;
 }
 
+export interface PaymentRecord {
+  id: string;
+  amount: number;
+  method: 'cash' | 'card' | 'transfer' | 'cheque';
+  date: Date;
+  notes?: string;
+}
+
 export interface Sale {
   id: string;
   saleNumber: string;
@@ -19,8 +27,10 @@ export interface Sale {
   tax: number;
   discount: number;
   total: number;
-  paymentMethod: 'cash' | 'card' | 'transfer' | 'cheque';
-  status: 'completed' | 'pending' | 'refunded';
+  amountPaid: number;
+  remainingBalance: number;
+  payments: PaymentRecord[];
+  status: 'completed' | 'pending' | 'refunded' | 'partial';
   notes?: string;
   createdAt: Date;
   createdBy: string;
@@ -34,5 +44,6 @@ export interface SaleFormData {
   items: Omit<SaleItem, 'id' | 'totalPrice'>[];
   discount: number;
   paymentMethod: 'cash' | 'card' | 'transfer' | 'cheque';
+  initialPayment: number;
   notes?: string;
 }

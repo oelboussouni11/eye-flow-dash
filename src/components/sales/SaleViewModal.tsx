@@ -32,72 +32,143 @@ export const SaleViewModal: React.FC<SaleViewModalProps> = ({
       <head>
         <title>Invoice ${sale.saleNumber}</title>
         <style>
-          body { font-family: Arial, sans-serif; margin: 40px; }
-          .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
-          .details { display: flex; justify-content: space-between; margin-bottom: 30px; }
-          .details div { flex: 1; }
-          .items table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-          .items th, .items td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-          .items th { background-color: #f2f2f2; }
-          .summary { margin-left: auto; width: 300px; }
-          .summary table { width: 100%; }
-          .summary td { padding: 5px; }
-          .total { font-weight: bold; font-size: 1.2em; }
-          @media print { body { margin: 0; } }
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; color: #333; }
+          .invoice-container { max-width: 800px; margin: 0 auto; background: white; }
+          .header { text-align: center; margin-bottom: 40px; }
+          .store-info { font-size: 18px; font-weight: bold; color: #2563eb; margin-bottom: 10px; }
+          .store-details { font-size: 14px; color: #666; line-height: 1.4; }
+          .invoice-title { font-size: 36px; font-weight: bold; color: #1e40af; margin: 20px 0 10px; }
+          .invoice-number { font-size: 20px; color: #64748b; }
+          .billing-section { display: flex; justify-content: space-between; margin: 40px 0; }
+          .billing-info { flex: 1; }
+          .billing-info h3 { font-size: 16px; font-weight: bold; margin-bottom: 10px; color: #374151; }
+          .billing-details { font-size: 14px; line-height: 1.6; color: #666; }
+          .items-section { margin: 30px 0; }
+          .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+          .items-table th { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 8px; text-align: left; font-weight: 600; color: #374151; }
+          .items-table td { border: 1px solid #e2e8f0; padding: 12px 8px; }
+          .items-table tbody tr:nth-child(even) { background: #f9fafb; }
+          .summary-section { margin-left: auto; width: 350px; }
+          .summary-table { width: 100%; }
+          .summary-table td { padding: 8px; border-bottom: 1px solid #e5e7eb; }
+          .summary-table .total-row { font-weight: bold; font-size: 18px; border-top: 2px solid #374151; color: #1e40af; }
+          .payment-section { margin-top: 30px; }
+          .payment-status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+          .status-completed { background: #dcfce7; color: #166534; }
+          .status-partial { background: #fef3c7; color: #92400e; }
+          .status-pending { background: #fee2e2; color: #dc2626; }
+          .notes-section { margin-top: 30px; padding: 20px; background: #f8fafc; border-radius: 8px; }
+          .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #9ca3af; }
+          @media print { 
+            body { margin: 0; padding: 10px; } 
+            .invoice-container { box-shadow: none; }
+          }
         </style>
       </head>
       <body>
-        <div class="header">
-          <h1>INVOICE</h1>
-          <h2>${sale.saleNumber}</h2>
-        </div>
-        
-        <div class="details">
-          <div>
-            <strong>Bill To:</strong><br>
-            ${sale.clientName || 'Walk-in Customer'}<br>
-            ${sale.clientEmail || ''}
+        <div class="invoice-container">
+          <div class="header">
+            <div class="store-info">OptiVision Store</div>
+            <div class="store-details">
+              123 Main Street, City, State 12345<br>
+              Phone: (555) 123-4567 | Email: info@optivision.com<br>
+              Tax ID: 123-456-789
+            </div>
+            <div class="invoice-title">INVOICE</div>
+            <div class="invoice-number">#${sale.saleNumber}</div>
           </div>
-          <div style="text-align: right;">
-            <strong>Date:</strong> ${new Date(sale.createdAt).toLocaleDateString()}<br>
-            <strong>Payment Method:</strong> ${sale.paymentMethod.charAt(0).toUpperCase() + sale.paymentMethod.slice(1)}<br>
-            <strong>Status:</strong> ${sale.status.charAt(0).toUpperCase() + sale.status.slice(1)}
+          
+          <div class="billing-section">
+            <div class="billing-info">
+              <h3>Bill To:</h3>
+              <div class="billing-details">
+                ${sale.clientName || 'Walk-in Customer'}<br>
+                ${sale.clientEmail || ''}
+              </div>
+            </div>
+            <div class="billing-info" style="text-align: right;">
+              <h3>Invoice Details:</h3>
+              <div class="billing-details">
+                <strong>Date:</strong> ${new Date(sale.createdAt).toLocaleDateString()}<br>
+                <strong>Due Date:</strong> ${new Date(sale.createdAt).toLocaleDateString()}<br>
+                <strong>Status:</strong> <span class="payment-status status-${sale.status}">${sale.status}</span>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div class="items">
-          <table>
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th>Quantity</th>
-                <th>Unit Price</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${sale.items.map(item => `
+          <div class="items-section">
+            <table class="items-table">
+              <thead>
                 <tr>
-                  <td>${item.productName}</td>
-                  <td>${item.quantity}</td>
-                  <td>$${item.unitPrice.toFixed(2)}</td>
-                  <td>$${item.totalPrice.toFixed(2)}</td>
+                  <th>Description</th>
+                  <th style="text-align: center;">Qty</th>
+                  <th style="text-align: right;">Unit Price</th>
+                  <th style="text-align: right;">Total</th>
                 </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                ${sale.items.map(item => `
+                  <tr>
+                    <td>
+                      <strong>${item.productName}</strong><br>
+                      <small style="color: #666;">${item.productType === 'contact_lens' ? 'Contact Lens' : 'Product'}</small>
+                    </td>
+                    <td style="text-align: center;">${item.quantity}</td>
+                    <td style="text-align: right;">$${item.unitPrice.toFixed(2)}</td>
+                    <td style="text-align: right;">$${item.totalPrice.toFixed(2)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
 
-        <div class="summary">
-          <table>
-            <tr><td>Subtotal:</td><td>$${sale.subtotal.toFixed(2)}</td></tr>
-            <tr><td>Discount:</td><td>-$${sale.discount.toFixed(2)}</td></tr>
-            <tr><td>Tax:</td><td>$${sale.tax.toFixed(2)}</td></tr>
-            <tr class="total"><td>Total:</td><td>$${sale.total.toFixed(2)}</td></tr>
-          </table>
-        </div>
+          <div class="summary-section">
+            <table class="summary-table">
+              <tr><td>Subtotal:</td><td style="text-align: right;">$${sale.subtotal.toFixed(2)}</td></tr>
+              <tr><td>Discount:</td><td style="text-align: right;">-$${sale.discount.toFixed(2)}</td></tr>
+              <tr><td>Tax (16%):</td><td style="text-align: right;">$${sale.tax.toFixed(2)}</td></tr>
+              <tr class="total-row"><td>Total:</td><td style="text-align: right;">$${sale.total.toFixed(2)}</td></tr>
+              <tr><td>Amount Paid:</td><td style="text-align: right;">$${sale.amountPaid.toFixed(2)}</td></tr>
+              <tr><td style="font-weight: bold;">Balance Due:</td><td style="text-align: right; font-weight: bold;">$${sale.remainingBalance.toFixed(2)}</td></tr>
+            </table>
+          </div>
 
-        ${sale.notes ? `<div style="margin-top: 30px;"><strong>Notes:</strong><br>${sale.notes}</div>` : ''}
+          ${sale.payments && sale.payments.length > 0 ? `
+            <div class="payment-section">
+              <h3>Payment History:</h3>
+              <table class="items-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Method</th>
+                    <th style="text-align: right;">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${sale.payments.map(payment => `
+                    <tr>
+                      <td>${new Date(payment.date).toLocaleDateString()}</td>
+                      <td>${payment.method.charAt(0).toUpperCase() + payment.method.slice(1)}</td>
+                      <td style="text-align: right;">$${payment.amount.toFixed(2)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          ` : ''}
+
+          ${sale.notes ? `
+            <div class="notes-section">
+              <strong>Notes:</strong><br>
+              ${sale.notes}
+            </div>
+          ` : ''}
+          
+          <div class="footer">
+            Thank you for your business!<br>
+            For questions about this invoice, please contact us at info@optivision.com
+          </div>
+        </div>
         
         <script>window.print(); window.close();</script>
       </body>
@@ -136,7 +207,7 @@ export const SaleViewModal: React.FC<SaleViewModalProps> = ({
                 <p><strong>Name:</strong> {sale.clientName || 'Walk-in Customer'}</p>
                 {sale.clientEmail && <p><strong>Email:</strong> {sale.clientEmail}</p>}
                 <p><strong>Sale Date:</strong> {new Date(sale.createdAt).toLocaleDateString()}</p>
-                <p><strong>Payment Method:</strong> {sale.paymentMethod.charAt(0).toUpperCase() + sale.paymentMethod.slice(1)}</p>
+                <p><strong>Payment Method:</strong> {sale.payments[0]?.method.charAt(0).toUpperCase() + sale.payments[0]?.method.slice(1) || 'N/A'}</p>
                 <p><strong>Status:</strong> {sale.status.charAt(0).toUpperCase() + sale.status.slice(1)}</p>
               </CardContent>
             </Card>
@@ -162,6 +233,14 @@ export const SaleViewModal: React.FC<SaleViewModalProps> = ({
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total:</span>
                   <span>${sale.total.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Amount Paid:</span>
+                  <span>${sale.amountPaid.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between font-bold text-red-600">
+                  <span>Balance Due:</span>
+                  <span>${sale.remainingBalance.toFixed(2)}</span>
                 </div>
               </CardContent>
             </Card>
@@ -189,6 +268,28 @@ export const SaleViewModal: React.FC<SaleViewModalProps> = ({
               </div>
             </CardContent>
           </Card>
+
+          {/* Payment History */}
+          {sale.payments && sale.payments.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {sale.payments.map((payment, index) => (
+                    <div key={index} className="flex justify-between items-center p-2 bg-muted rounded">
+                      <div>
+                        <p className="font-medium">{new Date(payment.date).toLocaleDateString()}</p>
+                        <p className="text-sm text-muted-foreground">{payment.method.charAt(0).toUpperCase() + payment.method.slice(1)}</p>
+                      </div>
+                      <p className="font-bold">${payment.amount.toFixed(2)}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Notes */}
           {sale.notes && (
