@@ -63,26 +63,65 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   product,
   categories
 }) => {
-  const [uploadedImages, setUploadedImages] = useState<string[]>(product?.images || []);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name: product?.name || '',
-      description: product?.description || '',
-      sku: product?.sku || '',
-      categoryId: product?.categoryId || '',
-      price: product?.price || 0,
-      cost: product?.cost || 0,
-      stock: product?.stock || 0,
-      minStock: product?.minStock || 0,
-      supplier: product?.supplier || '',
-      brand: product?.brand || '',
-      barcode: product?.barcode || '',
-      images: product?.images || [],
-      isActive: product?.isActive ?? true,
+      name: '',
+      description: '',
+      sku: '',
+      categoryId: '',
+      price: 0,
+      cost: 0,
+      stock: 0,
+      minStock: 0,
+      supplier: '',
+      brand: '',
+      barcode: '',
+      images: [],
+      isActive: true,
     },
   });
+
+  // Update form when product changes
+  React.useEffect(() => {
+    if (product) {
+      form.reset({
+        name: product.name,
+        description: product.description,
+        sku: product.sku,
+        categoryId: product.categoryId,
+        price: product.price,
+        cost: product.cost,
+        stock: product.stock,
+        minStock: product.minStock,
+        supplier: product.supplier || '',
+        brand: product.brand || '',
+        barcode: product.barcode || '',
+        images: product.images,
+        isActive: product.isActive,
+      });
+      setUploadedImages(product.images);
+    } else {
+      form.reset({
+        name: '',
+        description: '',
+        sku: '',
+        categoryId: '',
+        price: 0,
+        cost: 0,
+        stock: 0,
+        minStock: 0,
+        supplier: '',
+        brand: '',
+        barcode: '',
+        images: [],
+        isActive: true,
+      });
+      setUploadedImages([]);
+    }
+  }, [product, form]);
 
   const handleSubmit = (data: ProductFormData) => {
     onSubmit({ ...data, images: uploadedImages });
@@ -295,6 +334,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                       />
                     </FormControl>
+                    <div className="text-xs text-muted-foreground">
+                      Alert threshold when stock runs low
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}

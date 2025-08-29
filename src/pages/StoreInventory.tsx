@@ -167,7 +167,11 @@ export const StoreInventory: React.FC = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button variant="outline" className="flex items-center gap-2">
+        <Button 
+          variant="outline" 
+          className="flex items-center gap-2"
+          onClick={() => toast.info("Filter functionality coming soon")}
+        >
           <Filter className="w-4 h-4" />
           Filter
         </Button>
