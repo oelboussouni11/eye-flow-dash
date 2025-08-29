@@ -1,7 +1,32 @@
-export interface MedicalInfo {
-  allergies: string[];
-  medications: string[];
-  conditions: string[];
+export interface OpticalInfo {
+  currentPrescription?: {
+    rightEye?: {
+      sphere?: number;
+      cylinder?: number;
+      axis?: number;
+      add?: number;
+    };
+    leftEye?: {
+      sphere?: number;
+      cylinder?: number;
+      axis?: number;
+      add?: number;
+    };
+    pd?: number; // Pupillary Distance
+    prescribedBy?: string;
+    prescriptionDate?: string;
+  };
+  visualAcuity?: {
+    rightEyeUncorrected?: string; // e.g., "20/40"
+    leftEyeUncorrected?: string;
+    rightEyeCorrected?: string;
+    leftEyeCorrected?: string;
+  };
+  intraocularPressure?: {
+    rightEye?: number; // mmHg
+    leftEye?: number;
+    testDate?: string;
+  };
   notes?: string;
   lastExamDate?: string;
   nextAppointment?: string;
@@ -68,7 +93,7 @@ export interface Client {
     policyNumber: string;
     groupNumber?: string;
   };
-  medicalInfo: MedicalInfo;
+  opticalInfo?: OpticalInfo;
   prescriptionHistory: PrescriptionHistory[];
   clientHistory: ClientHistory[];
   createdAt: string;

@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Client } from '@/types/client';
+import { Client, OpticalInfo } from '@/types/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface ClientFormModalProps {
@@ -30,11 +30,35 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [newTag, setNewTag] = useState('');
-  const [newAllergy, setNewAllergy] = useState('');
-  const [newMedication, setNewMedication] = useState('');
-  const [newCondition, setNewCondition] = useState('');
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    dateOfBirth: string;
+    address: {
+      street: string;
+      city: string;
+      state: string;
+      zipCode: string;
+      country: string;
+    };
+    emergencyContact: {
+      name: string;
+      phone: string;
+      relationship: string;
+    };
+    insurance: {
+      provider: string;
+      policyNumber: string;
+      groupNumber: string;
+    };
+    opticalInfo?: OpticalInfo;
+    tags: string[];
+    status: 'active' | 'inactive';
+    preferredContactMethod: 'email' | 'phone' | 'sms';
+  }>({
     firstName: '',
     lastName: '',
     email: '',
@@ -57,17 +81,14 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
       policyNumber: '',
       groupNumber: ''
     },
-    medicalInfo: {
-      allergies: [] as string[],
-      medications: [] as string[],
-      conditions: [] as string[],
+    opticalInfo: {
       notes: '',
       lastExamDate: '',
       nextAppointment: ''
     },
     tags: [] as string[],
-    status: 'active' as 'active' | 'inactive',
-    preferredContactMethod: 'email' as 'email' | 'phone' | 'sms'
+    status: 'active',
+    preferredContactMethod: 'email'
   });
 
   useEffect(() => {
@@ -81,11 +102,29 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
         address: { ...client.address },
         emergencyContact: { ...client.emergencyContact },
         insurance: client.insurance ? { ...client.insurance, groupNumber: client.insurance.groupNumber || '' } : { provider: '', policyNumber: '', groupNumber: '' },
-        medicalInfo: { 
-          ...client.medicalInfo,
-          notes: client.medicalInfo.notes || '',
-          lastExamDate: client.medicalInfo.lastExamDate || '',
-          nextAppointment: client.medicalInfo.nextAppointment || ''
+        opticalInfo: client.opticalInfo ? {
+          currentPrescription: client.opticalInfo.currentPrescription ? {
+            ...client.opticalInfo.currentPrescription,
+            rightEye: client.opticalInfo.currentPrescription.rightEye ? {
+              ...client.opticalInfo.currentPrescription.rightEye
+            } : undefined,
+            leftEye: client.opticalInfo.currentPrescription.leftEye ? {
+              ...client.opticalInfo.currentPrescription.leftEye
+            } : undefined
+          } : undefined,
+          visualAcuity: client.opticalInfo.visualAcuity ? {
+            ...client.opticalInfo.visualAcuity
+          } : undefined,
+          intraocularPressure: client.opticalInfo.intraocularPressure ? {
+            ...client.opticalInfo.intraocularPressure
+          } : undefined,
+          notes: client.opticalInfo.notes || '',
+          lastExamDate: client.opticalInfo.lastExamDate || '',
+          nextAppointment: client.opticalInfo.nextAppointment || ''
+        } : {
+          notes: '',
+          lastExamDate: '',
+          nextAppointment: ''
         },
         tags: [...client.tags],
         status: client.status,
@@ -116,10 +155,7 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
           policyNumber: '',
           groupNumber: ''
         },
-        medicalInfo: {
-          allergies: [],
-          medications: [],
-          conditions: [],
+        opticalInfo: {
           notes: '',
           lastExamDate: '',
           nextAppointment: ''
@@ -133,64 +169,53 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
 
   const handleInputChange = (field: string, value: any) => {
     if (field.includes('.')) {
-      const [parent, child] = field.split('.');
+      const fieldParts = field.split('.');
       setFormData(prev => {
-        const parentObj = prev[parent as keyof typeof prev];
-        if (typeof parentObj === 'object' && parentObj !== null) {
-          return {
-            ...prev,
-            [parent]: {
-              ...parentObj,
-              [child]: value
-            }
-          };
+        const updated = { ...prev };
+        
+        // Handle nested optical info creation
+        if (fieldParts[0] === 'opticalInfo' && !updated.opticalInfo) {
+          updated.opticalInfo = {};
         }
-        return prev;
+        
+        // Navigate to the nested object and create intermediate objects if needed
+        let current: any = updated;
+        for (let i = 0; i < fieldParts.length - 1; i++) {
+          const part = fieldParts[i];
+          if (!current[part] || typeof current[part] !== 'object') {
+            current[part] = {};
+          } else {
+            current[part] = { ...current[part] };
+          }
+          current = current[part];
+        }
+        
+        // Set the final value
+        const finalField = fieldParts[fieldParts.length - 1];
+        current[finalField] = value;
+        
+        return updated;
       });
     } else {
       setFormData(prev => ({ ...prev, [field]: value }));
     }
   };
 
-  const addItem = (type: 'tags' | 'allergies' | 'medications' | 'conditions', value: string) => {
+  const addItem = (type: 'tags', value: string) => {
     if (!value.trim()) return;
 
-    if (type === 'tags') {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, value.trim()]
-      }));
-      setNewTag('');
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        medicalInfo: {
-          ...prev.medicalInfo,
-          [type]: [...prev.medicalInfo[type], value.trim()]
-        }
-      }));
-      
-      if (type === 'allergies') setNewAllergy('');
-      if (type === 'medications') setNewMedication('');
-      if (type === 'conditions') setNewCondition('');
-    }
+    setFormData(prev => ({
+      ...prev,
+      tags: [...prev.tags, value.trim()]
+    }));
+    setNewTag('');
   };
 
-  const removeItem = (type: 'tags' | 'allergies' | 'medications' | 'conditions', index: number) => {
-    if (type === 'tags') {
-      setFormData(prev => ({
-        ...prev,
-        tags: prev.tags.filter((_, i) => i !== index)
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        medicalInfo: {
-          ...prev.medicalInfo,
-          [type]: prev.medicalInfo[type].filter((_, i) => i !== index)
-        }
-      }));
-    }
+  const removeItem = (type: 'tags', index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      tags: prev.tags.filter((_, i) => i !== index)
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -231,7 +256,7 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
               <TabsTrigger value="contact">Contact & Address</TabsTrigger>
-              <TabsTrigger value="medical">Medical Info</TabsTrigger>
+              <TabsTrigger value="optical">Optical Info</TabsTrigger>
               <TabsTrigger value="other">Other Details</TabsTrigger>
             </TabsList>
 
@@ -420,145 +445,252 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
               </Card>
             </TabsContent>
 
-            <TabsContent value="medical" className="space-y-4">
+            <TabsContent value="optical" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Medical Information</CardTitle>
+                  <CardTitle>Current Prescription</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Allergies */}
-                  <div className="space-y-3">
-                    <Label>Allergies</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Add allergy"
-                        value={newAllergy}
-                        onChange={(e) => setNewAllergy(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addItem('allergies', newAllergy))}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => addItem('allergies', newAllergy)}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
+                  {/* Current Prescription */}
+                  <div className="grid grid-cols-2 gap-6">
+                    {/* Right Eye (OD) */}
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-center">Right Eye (OD)</h4>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label>Sphere (SPH)</Label>
+                          <Input
+                            type="number"
+                            step="0.25"
+                            value={formData.opticalInfo?.currentPrescription?.rightEye?.sphere || ''}
+                            onChange={(e) => handleInputChange('opticalInfo.currentPrescription.rightEye.sphere', parseFloat(e.target.value) || 0)}
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Cylinder (CYL)</Label>
+                          <Input
+                            type="number"
+                            step="0.25"
+                            value={formData.opticalInfo?.currentPrescription?.rightEye?.cylinder || ''}
+                            onChange={(e) => handleInputChange('opticalInfo.currentPrescription.rightEye.cylinder', parseFloat(e.target.value) || 0)}
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Axis</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="180"
+                            value={formData.opticalInfo?.currentPrescription?.rightEye?.axis || ''}
+                            onChange={(e) => handleInputChange('opticalInfo.currentPrescription.rightEye.axis', parseInt(e.target.value) || 0)}
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Add</Label>
+                          <Input
+                            type="number"
+                            step="0.25"
+                            value={formData.opticalInfo?.currentPrescription?.rightEye?.add || ''}
+                            onChange={(e) => handleInputChange('opticalInfo.currentPrescription.rightEye.add', parseFloat(e.target.value) || 0)}
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {formData.medicalInfo.allergies.map((allergy, index) => (
-                        <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                          {allergy}
-                          <button
-                            type="button"
-                            onClick={() => removeItem('allergies', index)}
-                            className="ml-1 hover:text-destructive"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </Badge>
-                      ))}
+
+                    {/* Left Eye (OS) */}
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-center">Left Eye (OS)</h4>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label>Sphere (SPH)</Label>
+                          <Input
+                            type="number"
+                            step="0.25"
+                            value={formData.opticalInfo?.currentPrescription?.leftEye?.sphere || ''}
+                            onChange={(e) => handleInputChange('opticalInfo.currentPrescription.leftEye.sphere', parseFloat(e.target.value) || 0)}
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Cylinder (CYL)</Label>
+                          <Input
+                            type="number"
+                            step="0.25"
+                            value={formData.opticalInfo?.currentPrescription?.leftEye?.cylinder || ''}
+                            onChange={(e) => handleInputChange('opticalInfo.currentPrescription.leftEye.cylinder', parseFloat(e.target.value) || 0)}
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Axis</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="180"
+                            value={formData.opticalInfo?.currentPrescription?.leftEye?.axis || ''}
+                            onChange={(e) => handleInputChange('opticalInfo.currentPrescription.leftEye.axis', parseInt(e.target.value) || 0)}
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Add</Label>
+                          <Input
+                            type="number"
+                            step="0.25"
+                            value={formData.opticalInfo?.currentPrescription?.leftEye?.add || ''}
+                            onChange={(e) => handleInputChange('opticalInfo.currentPrescription.leftEye.add', parseFloat(e.target.value) || 0)}
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Medications */}
-                  <div className="space-y-3">
-                    <Label>Current Medications</Label>
-                    <div className="flex gap-2">
+                  {/* PD and Doctor Info */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Pupillary Distance (PD)</Label>
                       <Input
-                        placeholder="Add medication"
-                        value={newMedication}
-                        onChange={(e) => setNewMedication(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addItem('medications', newMedication))}
+                        type="number"
+                        value={formData.opticalInfo?.currentPrescription?.pd || ''}
+                        onChange={(e) => handleInputChange('opticalInfo.currentPrescription.pd', parseFloat(e.target.value) || 0)}
+                        placeholder="62"
                       />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => addItem('medications', newMedication)}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {formData.medicalInfo.medications.map((medication, index) => (
-                        <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                          {medication}
-                          <button
-                            type="button"
-                            onClick={() => removeItem('medications', index)}
-                            className="ml-1 hover:text-destructive"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </Badge>
-                      ))}
+                    <div className="space-y-2">
+                      <Label>Prescribed By</Label>
+                      <Input
+                        value={formData.opticalInfo?.currentPrescription?.prescribedBy || ''}
+                        onChange={(e) => handleInputChange('opticalInfo.currentPrescription.prescribedBy', e.target.value)}
+                        placeholder="Dr. Smith"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Prescription Date</Label>
+                      <Input
+                        type="date"
+                        value={formData.opticalInfo?.currentPrescription?.prescriptionDate || ''}
+                        onChange={(e) => handleInputChange('opticalInfo.currentPrescription.prescriptionDate', e.target.value)}
+                      />
                     </div>
                   </div>
+                </CardContent>
+              </Card>
 
-                  {/* Conditions */}
-                  <div className="space-y-3">
-                    <Label>Medical Conditions</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Add condition"
-                        value={newCondition}
-                        onChange={(e) => setNewCondition(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addItem('conditions', newCondition))}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => addItem('conditions', newCondition)}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Visual Acuity</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h4 className="font-semibold">Uncorrected</h4>
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label>Right Eye (OD)</Label>
+                        <Input
+                          value={formData.opticalInfo?.visualAcuity?.rightEyeUncorrected || ''}
+                          onChange={(e) => handleInputChange('opticalInfo.visualAcuity.rightEyeUncorrected', e.target.value)}
+                          placeholder="20/20"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Left Eye (OS)</Label>
+                        <Input
+                          value={formData.opticalInfo?.visualAcuity?.leftEyeUncorrected || ''}
+                          onChange={(e) => handleInputChange('opticalInfo.visualAcuity.leftEyeUncorrected', e.target.value)}
+                          placeholder="20/20"
+                        />
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {formData.medicalInfo.conditions.map((condition, index) => (
-                        <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                          {condition}
-                          <button
-                            type="button"
-                            onClick={() => removeItem('conditions', index)}
-                            className="ml-1 hover:text-destructive"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </Badge>
-                      ))}
+                  </div>
+                  <div className="space-y-4">
+                    <h4 className="font-semibold">Corrected</h4>
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label>Right Eye (OD)</Label>
+                        <Input
+                          value={formData.opticalInfo?.visualAcuity?.rightEyeCorrected || ''}
+                          onChange={(e) => handleInputChange('opticalInfo.visualAcuity.rightEyeCorrected', e.target.value)}
+                          placeholder="20/20"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Left Eye (OS)</Label>
+                        <Input
+                          value={formData.opticalInfo?.visualAcuity?.leftEyeCorrected || ''}
+                          onChange={(e) => handleInputChange('opticalInfo.visualAcuity.leftEyeCorrected', e.target.value)}
+                          placeholder="20/20"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Intraocular Pressure (IOP)</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Right Eye (mmHg)</Label>
+                      <Input
+                        type="number"
+                        value={formData.opticalInfo?.intraocularPressure?.rightEye || ''}
+                        onChange={(e) => handleInputChange('opticalInfo.intraocularPressure.rightEye', parseFloat(e.target.value) || 0)}
+                        placeholder="15"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Left Eye (mmHg)</Label>
+                      <Input
+                        type="number"
+                        value={formData.opticalInfo?.intraocularPressure?.leftEye || ''}
+                        onChange={(e) => handleInputChange('opticalInfo.intraocularPressure.leftEye', parseFloat(e.target.value) || 0)}
+                        placeholder="15"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Test Date</Label>
+                      <Input
+                        type="date"
+                        value={formData.opticalInfo?.intraocularPressure?.testDate || ''}
+                        onChange={(e) => handleInputChange('opticalInfo.intraocularPressure.testDate', e.target.value)}
+                      />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="lastExamDate">Last Eye Exam</Label>
+                      <Label>Last Eye Exam</Label>
                       <Input
-                        id="lastExamDate"
                         type="date"
-                        value={formData.medicalInfo.lastExamDate}
-                        onChange={(e) => handleInputChange('medicalInfo.lastExamDate', e.target.value)}
+                        value={formData.opticalInfo?.lastExamDate || ''}
+                        onChange={(e) => handleInputChange('opticalInfo.lastExamDate', e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="nextAppointment">Next Appointment</Label>
+                      <Label>Next Appointment</Label>
                       <Input
-                        id="nextAppointment"
                         type="date"
-                        value={formData.medicalInfo.nextAppointment}
-                        onChange={(e) => handleInputChange('medicalInfo.nextAppointment', e.target.value)}
+                        value={formData.opticalInfo?.nextAppointment || ''}
+                        onChange={(e) => handleInputChange('opticalInfo.nextAppointment', e.target.value)}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="medicalNotes">Medical Notes</Label>
+                    <Label>Optical Notes</Label>
                     <Textarea
-                      id="medicalNotes"
-                      value={formData.medicalInfo.notes}
-                      onChange={(e) => handleInputChange('medicalInfo.notes', e.target.value)}
+                      value={formData.opticalInfo?.notes || ''}
+                      onChange={(e) => handleInputChange('opticalInfo.notes', e.target.value)}
                       rows={3}
+                      placeholder="Additional optical notes..."
                     />
                   </div>
                 </CardContent>

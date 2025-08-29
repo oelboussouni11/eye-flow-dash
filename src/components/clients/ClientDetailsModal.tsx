@@ -95,7 +95,7 @@ export const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="medical">Medical Info</TabsTrigger>
+            <TabsTrigger value="optical">Optical Info</TabsTrigger>
             <TabsTrigger value="prescriptions">Prescriptions</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
           </TabsList>
@@ -229,78 +229,175 @@ export const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
             </div>
           </TabsContent>
 
-          <TabsContent value="medical" className="space-y-6">
+          <TabsContent value="optical" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Medical Information</CardTitle>
+                <CardTitle>Optical Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Current Prescription */}
+                {client.opticalInfo?.currentPrescription && (
+                  <div className="space-y-4">
+                    <h4 className="font-semibold">Current Prescription</h4>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <h5 className="font-medium text-center">Right Eye (OD)</h5>
+                        <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <span className="text-muted-foreground">SPH:</span>
+                            <span className="font-mono">{client.opticalInfo.currentPrescription.rightEye?.sphere || '0.00'}</span>
+                            <span className="text-muted-foreground">CYL:</span>
+                            <span className="font-mono">{client.opticalInfo.currentPrescription.rightEye?.cylinder || '0.00'}</span>
+                            <span className="text-muted-foreground">AXIS:</span>
+                            <span className="font-mono">{client.opticalInfo.currentPrescription.rightEye?.axis || '0'}°</span>
+                            {client.opticalInfo.currentPrescription.rightEye?.add && (
+                              <>
+                                <span className="text-muted-foreground">ADD:</span>
+                                <span className="font-mono">{client.opticalInfo.currentPrescription.rightEye.add}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <h5 className="font-medium text-center">Left Eye (OS)</h5>
+                        <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <span className="text-muted-foreground">SPH:</span>
+                            <span className="font-mono">{client.opticalInfo.currentPrescription.leftEye?.sphere || '0.00'}</span>
+                            <span className="text-muted-foreground">CYL:</span>
+                            <span className="font-mono">{client.opticalInfo.currentPrescription.leftEye?.cylinder || '0.00'}</span>
+                            <span className="text-muted-foreground">AXIS:</span>
+                            <span className="font-mono">{client.opticalInfo.currentPrescription.leftEye?.axis || '0'}°</span>
+                            {client.opticalInfo.currentPrescription.leftEye?.add && (
+                              <>
+                                <span className="text-muted-foreground">ADD:</span>
+                                <span className="font-mono">{client.opticalInfo.currentPrescription.leftEye.add}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-4">
+                      {client.opticalInfo.currentPrescription.pd && (
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Pupillary Distance (PD)</p>
+                          <p className="font-medium">{client.opticalInfo.currentPrescription.pd}mm</p>
+                        </div>
+                      )}
+                      {client.opticalInfo.currentPrescription.prescribedBy && (
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Prescribed By</p>
+                          <p className="font-medium">{client.opticalInfo.currentPrescription.prescribedBy}</p>
+                        </div>
+                      )}
+                      {client.opticalInfo.currentPrescription.prescriptionDate && (
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Prescription Date</p>
+                          <p className="font-medium">{formatDate(client.opticalInfo.currentPrescription.prescriptionDate)}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Visual Acuity */}
+                {client.opticalInfo?.visualAcuity && (
+                  <div className="space-y-4">
+                    <h4 className="font-semibold">Visual Acuity</h4>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <h5 className="font-medium">Uncorrected</h5>
+                        <div className="space-y-2">
+                          {client.opticalInfo.visualAcuity.rightEyeUncorrected && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">OD:</span>
+                              <span className="font-medium">{client.opticalInfo.visualAcuity.rightEyeUncorrected}</span>
+                            </div>
+                          )}
+                          {client.opticalInfo.visualAcuity.leftEyeUncorrected && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">OS:</span>
+                              <span className="font-medium">{client.opticalInfo.visualAcuity.leftEyeUncorrected}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <h5 className="font-medium">Corrected</h5>
+                        <div className="space-y-2">
+                          {client.opticalInfo.visualAcuity.rightEyeCorrected && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">OD:</span>
+                              <span className="font-medium">{client.opticalInfo.visualAcuity.rightEyeCorrected}</span>
+                            </div>
+                          )}
+                          {client.opticalInfo.visualAcuity.leftEyeCorrected && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">OS:</span>
+                              <span className="font-medium">{client.opticalInfo.visualAcuity.leftEyeCorrected}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Intraocular Pressure */}
+                {client.opticalInfo?.intraocularPressure && (
+                  <div className="space-y-4">
+                    <h4 className="font-semibold">Intraocular Pressure (IOP)</h4>
+                    <div className="grid grid-cols-3 gap-4">
+                      {client.opticalInfo.intraocularPressure.rightEye && (
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Right Eye (OD)</p>
+                          <p className="font-medium">{client.opticalInfo.intraocularPressure.rightEye} mmHg</p>
+                        </div>
+                      )}
+                      {client.opticalInfo.intraocularPressure.leftEye && (
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Left Eye (OS)</p>
+                          <p className="font-medium">{client.opticalInfo.intraocularPressure.leftEye} mmHg</p>
+                        </div>
+                      )}
+                      {client.opticalInfo.intraocularPressure.testDate && (
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Test Date</p>
+                          <p className="font-medium">{formatDate(client.opticalInfo.intraocularPressure.testDate)}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Exam Dates */}
-                {(client.medicalInfo.lastExamDate || client.medicalInfo.nextAppointment) && (
+                {(client.opticalInfo?.lastExamDate || client.opticalInfo?.nextAppointment) && (
                   <div className="grid grid-cols-2 gap-4">
-                    {client.medicalInfo.lastExamDate && (
+                    {client.opticalInfo.lastExamDate && (
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Last Eye Exam</p>
-                        <p className="font-medium">{formatDate(client.medicalInfo.lastExamDate)}</p>
+                        <p className="font-medium">{formatDate(client.opticalInfo.lastExamDate)}</p>
                       </div>
                     )}
-                    {client.medicalInfo.nextAppointment && (
+                    {client.opticalInfo.nextAppointment && (
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Next Appointment</p>
-                        <p className="font-medium">{formatDate(client.medicalInfo.nextAppointment)}</p>
+                        <p className="font-medium">{formatDate(client.opticalInfo.nextAppointment)}</p>
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* Allergies */}
-                {client.medicalInfo.allergies.length > 0 && (
+                {/* Optical Notes */}
+                {client.opticalInfo?.notes && (
                   <div className="space-y-3">
-                    <h4 className="font-semibold text-destructive">Allergies</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {client.medicalInfo.allergies.map((allergy, index) => (
-                        <Badge key={index} variant="destructive">
-                          {allergy}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Medications */}
-                {client.medicalInfo.medications.length > 0 && (
-                  <div className="space-y-3">
-                    <h4 className="font-semibold">Current Medications</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {client.medicalInfo.medications.map((medication, index) => (
-                        <Badge key={index} variant="secondary">
-                          {medication}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Conditions */}
-                {client.medicalInfo.conditions.length > 0 && (
-                  <div className="space-y-3">
-                    <h4 className="font-semibold">Medical Conditions</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {client.medicalInfo.conditions.map((condition, index) => (
-                        <Badge key={index} variant="outline">
-                          {condition}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Medical Notes */}
-                {client.medicalInfo.notes && (
-                  <div className="space-y-3">
-                    <h4 className="font-semibold">Medical Notes</h4>
+                    <h4 className="font-semibold">Optical Notes</h4>
                     <div className="bg-muted/50 p-3 rounded-lg">
-                      <p className="text-sm whitespace-pre-wrap">{client.medicalInfo.notes}</p>
+                      <p className="text-sm whitespace-pre-wrap">{client.opticalInfo.notes}</p>
                     </div>
                   </div>
                 )}
