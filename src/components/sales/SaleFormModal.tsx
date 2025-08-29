@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 import { Sale, SaleFormData, PaymentRecord, SaleItem } from '@/types/sales';
 import { useTax } from '@/contexts/TaxContext';
+import { useParams } from 'react-router-dom';
 import { Product, ContactLens } from '@/types/inventory';
 import { toast } from 'sonner';
 
@@ -41,7 +42,19 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
   isEditMode = false,
   editSale
 }) => {
-  const { taxRate } = useTax();
+  const { storeId } = useParams();
+  
+  // Get store-specific tax rate, fallback to global tax rate
+  const getStoreTaxRate = () => {
+    const storeConfig = localStorage.getItem(`store-${storeId}-config`);
+    if (storeConfig) {
+      const config = JSON.parse(storeConfig);
+      return config.taxRate || 16;
+    }
+    return 16; // Default fallback
+  };
+  
+  const storeTaxRate = getStoreTaxRate();
   
   const [formData, setFormData] = useState<SaleFormData>({
     items: [],
@@ -125,10 +138,10 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
     setFormData({ ...formData, items: newItems });
   };
 
-  // Calculate totals using the taxRate from context
+  // Calculate totals using the store-specific tax rate
   const subtotal = formData.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
   const discountAmount = (subtotal * formData.discount) / 100;
-  const taxAmount = (subtotal - discountAmount) * (taxRate / 100);
+  const taxAmount = (subtotal - discountAmount) * (storeTaxRate / 100);
   const total = subtotal - discountAmount + taxAmount;
   const remainingBalance = total - (formData.initialPayment || 0);
 
@@ -406,7 +419,7 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
                   <span>-${discountAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Tax ({taxRate}%):</span>
+                  <span>Tax ({storeTaxRate}%):</span>
                   <span>${taxAmount.toFixed(2)}</span>
                 </div>
                 <Separator />

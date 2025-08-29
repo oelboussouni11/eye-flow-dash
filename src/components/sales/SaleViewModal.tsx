@@ -23,6 +23,15 @@ export const SaleViewModal: React.FC<SaleViewModalProps> = ({
   if (!sale) return null;
 
   const handlePrint = () => {
+    // Get store configuration
+    const storeConfig = localStorage.getItem(`store-${sale.storeId}-config`);
+    const config = storeConfig ? JSON.parse(storeConfig) : {
+      storeName: 'OptiVision Store',
+      address: '123 Main Street, City, State 12345',
+      phone: '(555) 123-4567',
+      email: 'info@optivision.com',
+      taxId: '123-456-789'
+    };
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
@@ -68,11 +77,12 @@ export const SaleViewModal: React.FC<SaleViewModalProps> = ({
       <body>
         <div class="invoice-container">
           <div class="header">
-            <div class="store-info">OptiVision Store</div>
+            ${config.logo ? `<img src="${config.logo}" alt="${config.storeName}" style="max-height: 80px; margin: 0 auto 20px;" />` : ''}
+            <div class="store-info">${config.storeName}</div>
             <div class="store-details">
-              123 Main Street, City, State 12345<br>
-              Phone: (555) 123-4567 | Email: info@optivision.com<br>
-              Tax ID: 123-456-789
+              ${config.address}<br>
+              Phone: ${config.phone} | Email: ${config.email}<br>
+              Tax ID: ${config.taxId}
             </div>
             <div class="invoice-title">INVOICE</div>
             <div class="invoice-number">#${sale.saleNumber}</div>

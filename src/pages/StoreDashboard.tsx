@@ -4,6 +4,7 @@ import { TrendingUp, Users, Package, DollarSign, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatsGrid } from '@/components/dashboard/StatsGrid';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
+import { StoreConfiguration } from '@/components/store/StoreConfiguration';
 
 export const StoreDashboard: React.FC = () => {
   const { storeId } = useParams();
@@ -179,31 +180,35 @@ export const StoreDashboard: React.FC = () => {
         </Card>
       </div>
 
-      {/* Store Information */}
-      <Card className="bg-gradient-card border-border shadow-card">
-        <CardHeader>
-          <CardTitle>Store Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-medium text-foreground mb-2">Store Details</h3>
-              <div className="space-y-2 text-sm">
-                <p><span className="text-muted-foreground">Name:</span> {store.name}</p>
-                <p><span className="text-muted-foreground">Address:</span> {store.address}</p>
-                <p><span className="text-muted-foreground">Employees:</span> {store.employeeCount || 0}</p>
-                <p><span className="text-muted-foreground">Created:</span> {new Date(store.createdAt).toLocaleDateString()}</p>
+      {/* Store Configuration and Information */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <StoreConfiguration />
+        
+        <Card className="bg-gradient-card border-border shadow-card">
+          <CardHeader>
+            <CardTitle>Store Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium text-foreground mb-2">Store Details</h3>
+                <div className="space-y-2 text-sm">
+                  <p><span className="text-muted-foreground">Name:</span> {store.name}</p>
+                  <p><span className="text-muted-foreground">Address:</span> {store.address}</p>
+                  <p><span className="text-muted-foreground">Employees:</span> {store.employeeCount || 0}</p>
+                  <p><span className="text-muted-foreground">Created:</span> {new Date(store.createdAt).toLocaleDateString()}</p>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-medium text-foreground mb-2">Store Description</h3>
+                <p className="text-sm text-muted-foreground">
+                  {store.info || "No description available for this store."}
+                </p>
               </div>
             </div>
-            <div>
-              <h3 className="font-medium text-foreground mb-2">Store Description</h3>
-              <p className="text-sm text-muted-foreground">
-                {store.info || 'No description available for this store.'}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

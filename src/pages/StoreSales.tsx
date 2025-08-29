@@ -17,7 +17,16 @@ import { toast } from 'sonner';
 export const StoreSales: React.FC = () => {
   const { storeId } = useParams();
   const { user } = useAuth();
-  const { taxRate } = useTax();
+  
+  // Get store-specific tax rate
+  const getStoreTaxRate = () => {
+    const storeConfig = localStorage.getItem(`store-${storeId}-config`);
+    if (storeConfig) {
+      const config = JSON.parse(storeConfig);
+      return config.taxRate || 16;
+    }
+    return 16; // Default fallback
+  };
   const [sales, setSales] = useState<Sale[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [contactLenses, setContactLenses] = useState<ContactLens[]>([]);
@@ -165,7 +174,7 @@ export const StoreSales: React.FC = () => {
 
     const subtotal = saleItems.reduce((sum, item) => sum + item.totalPrice, 0);
     const discountAmount = (subtotal * formData.discount) / 100;
-    const taxAmount = (subtotal - discountAmount) * (taxRate / 100);
+    const taxAmount = (subtotal - discountAmount) * (getStoreTaxRate() / 100);
     const total = subtotal - discountAmount + taxAmount;
     
     const initialPayment = formData.initialPayment || 0;
