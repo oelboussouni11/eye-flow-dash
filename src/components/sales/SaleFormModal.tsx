@@ -42,6 +42,7 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
   editSale
 }) => {
   const { taxRate } = useTax();
+  
   const [formData, setFormData] = useState<SaleFormData>({
     items: [],
     discount: 0,
@@ -87,36 +88,19 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
     }
   }, [isEditMode, editSale, clients]);
 
-  const allItems = [
-    ...products.map(p => ({ ...p, type: 'product' as const })),
-    ...contactLenses.map(cl => ({ ...cl, type: 'contact_lens' as const }))
-  ];
+  const addItem = (product: Product | ContactLens, type: 'product' | 'contact_lens') => {
+    const newItem: Omit<SaleItem, 'id' | 'totalPrice'> = {
+      productId: product.id,
+      productName: product.name || (product as any).brand,
+      productType: type,
+      quantity: 1,
+      unitPrice: product.price
+    };
 
-  const filteredItems = allItems.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.brand?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const addItem = (item: typeof allItems[0]) => {
-    const existingIndex = formData.items.findIndex(
-      saleItem => saleItem.productId === item.id && saleItem.productType === item.type
-    );
-
-    if (existingIndex >= 0) {
-      const newItems = [...formData.items];
-      newItems[existingIndex].quantity += 1;
-      setFormData({ ...formData, items: newItems });
-    } else {
-      const newItem: Omit<SaleItem, 'id' | 'totalPrice'> = {
-        productId: item.id,
-        productName: item.name,
-        productType: item.type,
-        quantity: 1,
-        unitPrice: item.price
-      };
-      setFormData({ ...formData, items: [...formData.items, newItem] });
-    }
-    setSearchTerm('');
+    setFormData({
+      ...formData,
+      items: [...formData.items, newItem]
+    });
   };
 
   const updateItemQuantity = (index: number, quantity: number) => {
@@ -124,8 +108,15 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
       removeItem(index);
       return;
     }
+    
     const newItems = [...formData.items];
-    newItems[index].quantity = quantity;
+    newItems[index] = { ...newItems[index], quantity };
+    setFormData({ ...formData, items: newItems });
+  };
+
+  const updateItemPrice = (index: number, unitPrice: number) => {
+    const newItems = [...formData.items];
+    newItems[index] = { ...newItems[index], unitPrice };
     setFormData({ ...formData, items: newItems });
   };
 
@@ -134,6 +125,7 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
     setFormData({ ...formData, items: newItems });
   };
 
+  // Calculate totals using the taxRate from context
   const subtotal = formData.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
   const discountAmount = (subtotal * formData.discount) / 100;
   const taxAmount = (subtotal - discountAmount) * (taxRate / 100);
@@ -152,6 +144,7 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
       clientName: selectedClient?.name || formData.clientName,
       clientEmail: selectedClient?.email || formData.clientEmail
     });
+    
     setFormData({
       items: [],
       discount: 0,
@@ -159,153 +152,183 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
       initialPayment: 0,
       notes: ''
     });
+    setSelectedClient(null);
     onClose();
   };
 
+  const filteredProducts = [...products, ...contactLenses].filter(item =>
+    (item.name || (item as any).brand).toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredClients = clients.filter(client =>
+    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? 'Edit Sale' : 'New Sale'}</DialogTitle>
+          <DialogTitle>
+            {isEditMode ? 'Edit Sale' : 'Create New Sale'}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Customer Information */}
+          {/* Customer Selection */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">Customer Information</h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="clientSelect">Select Customer</Label>
-                <Select
-                  value={selectedClient?.id || ''}
-                  onValueChange={(value) => {
-                    const client = clients.find(c => c.id === value);
-                    setSelectedClient(client || null);
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select existing customer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.name} - {client.email}
-                      </SelectItem>
+            <Label className="text-base font-medium">Customer Information</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="clientSearch">Search Existing Customers</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Input
+                    id="clientSearch"
+                    placeholder="Search by name or email..."
+                    className="pl-10"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                {searchTerm && filteredClients.length > 0 && (
+                  <div className="border rounded-md max-h-32 overflow-y-auto">
+                    {filteredClients.map((client) => (
+                      <button
+                        key={client.id}
+                        className="w-full text-left p-2 hover:bg-muted border-b last:border-b-0"
+                        onClick={() => {
+                          setSelectedClient(client);
+                          setSearchTerm('');
+                        }}
+                      >
+                        <div className="font-medium">{client.name}</div>
+                        <div className="text-sm text-muted-foreground">{client.email}</div>
+                      </button>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </div>
+                )}
               </div>
-              <div>
-                <Label htmlFor="clientName">Customer Name</Label>
+              
+              {/* Manual Customer Entry */}
+              <div className="space-y-2">
+                <Label>Or Enter Customer Details</Label>
                 <Input
-                  id="clientName"
+                  placeholder="Customer name"
                   value={selectedClient?.name || formData.clientName || ''}
-                  onChange={(e) => {
-                    if (!selectedClient) {
-                      setFormData({ ...formData, clientName: e.target.value });
-                    }
-                  }}
-                  placeholder="Enter customer name"
+                  onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
                   disabled={!!selectedClient}
                 />
-              </div>
-              <div>
-                <Label htmlFor="clientEmail">Customer Email</Label>
                 <Input
-                  id="clientEmail"
-                  type="email"
+                  placeholder="Customer email"
                   value={selectedClient?.email || formData.clientEmail || ''}
-                  onChange={(e) => {
-                    if (!selectedClient) {
-                      setFormData({ ...formData, clientEmail: e.target.value });
-                    }
-                  }}
-                  placeholder="Enter customer email"
+                  onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
                   disabled={!!selectedClient}
                 />
+                {selectedClient && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedClient(null)}
+                  >
+                    Clear Selection
+                  </Button>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Add Items */}
+          {/* Product Selection */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">Add Items</h3>
+            <Label className="text-base font-medium">Add Items to Sale</Label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
-                placeholder="Search products and contact lenses..."
+                placeholder="Search products..."
+                className="pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
               />
             </div>
             
-            {searchTerm && (
-              <Card className="max-h-40 overflow-y-auto">
-                <CardContent className="p-2">
-                  {filteredItems.map((item) => (
-                    <div
-                      key={`${item.type}-${item.id}`}
-                      className="flex items-center justify-between p-2 hover:bg-muted rounded cursor-pointer"
-                      onClick={() => addItem(item)}
-                    >
-                      <div>
-                        <p className="font-medium">{item.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {item.brand} • Stock: {item.stock} • ${item.price}
-                        </p>
-                      </div>
-                      <Plus className="w-4 h-4" />
+            {searchTerm && filteredProducts.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-64 overflow-y-auto border rounded-lg p-4">
+                {filteredProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="border rounded-lg p-3 hover:bg-muted cursor-pointer"
+                    onClick={() => {
+                      const type = 'category' in product ? 'contact_lens' : 'product';
+                      addItem(product, type);
+                      setSearchTerm('');
+                    }}
+                  >
+                    <div className="font-medium">{product.name || (product as any).brand}</div>
+                    <div className="text-sm text-muted-foreground">${product.price.toFixed(2)}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Stock: {product.stock} | {'category' in product ? 'Contact Lens' : 'Product'}
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
-          {/* Sale Items */}
+          {/* Selected Items */}
           {formData.items.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">Sale Items</h3>
+              <Label className="text-base font-medium">Sale Items</Label>
               <div className="space-y-2">
                 {formData.items.map((item, index) => (
-                  <Card key={index}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <p className="font-medium">{item.productName}</p>
-                          <p className="text-sm text-muted-foreground">${item.unitPrice} each</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => updateItemQuantity(index, item.quantity - 1)}
-                          >
-                            <Minus className="w-4 h-4" />
-                          </Button>
-                          <span className="w-8 text-center">{item.quantity}</span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => updateItemQuantity(index, item.quantity + 1)}
-                          >
-                            <Plus className="w-4 h-4" />
-                          </Button>
-                          <div className="w-20 text-right font-medium">
-                            ${(item.quantity * item.unitPrice).toFixed(2)}
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeItem(index)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div key={index} className="flex items-center gap-4 p-3 border rounded-lg">
+                    <div className="flex-1">
+                      <div className="font-medium">{item.productName}</div>
+                      <div className="text-sm text-muted-foreground capitalize">{item.productType}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => updateItemQuantity(index, item.quantity - 1)}
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => updateItemQuantity(index, parseInt(e.target.value) || 1)}
+                        className="w-16 text-center"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => updateItemQuantity(index, item.quantity + 1)}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="w-24">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={item.unitPrice}
+                        onChange={(e) => updateItemPrice(index, parseFloat(e.target.value) || 0)}
+                        placeholder="Price"
+                      />
+                    </div>
+                    <div className="w-20 text-right font-medium">
+                      ${(item.quantity * item.unitPrice).toFixed(2)}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeItem(index)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -412,8 +435,8 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>
-            {isEditMode ? 'Update Sale' : 'Complete Sale'}
+          <Button onClick={handleSubmit} disabled={formData.items.length === 0}>
+            {isEditMode ? 'Update Sale' : 'Create Sale'}
           </Button>
         </DialogFooter>
       </DialogContent>
