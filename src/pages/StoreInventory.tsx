@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Plus, Search, Filter, Package, Eye, Clock, AlertTriangle, Contact } from 'lucide-react';
+import { Plus, Search, Filter, Package, Eye, Clock, AlertTriangle, Contact, Download, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -243,6 +243,165 @@ export const StoreInventory: React.FC = () => {
     toast.success('Contact lens deleted successfully');
   };
 
+  // Export/Import functions
+  const exportInventoryTemplate = () => {
+    const template = {
+      products: [
+        {
+          name: "Example Sunglasses",
+          description: "Premium sunglasses with UV protection",
+          sku: "SUN001",
+          categoryId: "default-3", // Solaires category
+          price: 129.99,
+          cost: 65.00,
+          stock: 25,
+          minStock: 5,
+          supplier: "Supplier Name",
+          brand: "Brand Name",
+          barcode: "1234567890",
+          isActive: true
+        }
+      ],
+      contactLenses: [
+        {
+          name: "Daily Disposable Lenses",
+          category: "lentilles",
+          brand: "Acuvue",
+          type: "daily",
+          material: "Silicone Hydrogel",
+          diameter: 14.0,
+          baseCurve: 8.5,
+          power: "-2.00",
+          stock: 100,
+          minStock: 20,
+          price: 45.99,
+          cost: 25.00,
+          supplier: "Johnson & Johnson",
+          isActive: true
+        },
+        {
+          name: "Multi-Purpose Solution",
+          category: "produits",
+          brand: "ReNu",
+          type: "solution",
+          material: "Cleaning Solution",
+          stock: 50,
+          minStock: 10,
+          price: 12.99,
+          cost: 6.50,
+          supplier: "Bausch + Lomb",
+          isActive: true
+        }
+      ]
+    };
+
+    const dataStr = JSON.stringify(template, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `inventory-template-${new Date().getDate()}-${new Date().getMonth() + 1}-${new Date().getFullYear()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Template exported successfully');
+  };
+
+  const importInventoryData = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target?.result as string);
+          
+          if (data.products && Array.isArray(data.products)) {
+            const importedProducts = data.products.map((p: any, index: number) => ({
+              id: `imported-product-${Date.now()}-${index}`,
+              ...p,
+              storeId: storeId || '',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              images: p.images || []
+            }));
+            setProducts(prev => [...prev, ...importedProducts]);
+          }
+
+          if (data.contactLenses && Array.isArray(data.contactLenses)) {
+            const importedLenses = data.contactLenses.map((l: any, index: number) => ({
+              id: `imported-lens-${Date.now()}-${index}`,
+              ...l,
+              storeId: storeId || '',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              images: l.images || []
+            }));
+            setContactLenses(prev => [...prev, ...importedLenses]);
+          }
+
+          toast.success(`Import successful! Added ${data.products?.length || 0} products and ${data.contactLenses?.length || 0} contact lenses`);
+        } catch (error) {
+          toast.error('Invalid file format. Please upload a valid JSON file.');
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
+  const exportCurrentInventory = () => {
+    const data = {
+      products: products.map(p => ({
+        name: p.name,
+        description: p.description,
+        sku: p.sku,
+        categoryId: p.categoryId,
+        price: p.price,
+        cost: p.cost,
+        stock: p.stock,
+        minStock: p.minStock,
+        supplier: p.supplier,
+        brand: p.brand,
+        barcode: p.barcode,
+        isActive: p.isActive
+      })),
+      contactLenses: contactLenses.map(l => ({
+        name: l.name,
+        category: l.category,
+        brand: l.brand,
+        type: l.type,
+        material: l.material,
+        diameter: l.diameter,
+        baseCurve: l.baseCurve,
+        power: l.power,
+        cylinder: l.cylinder,
+        axis: l.axis,
+        color: l.color,
+        stock: l.stock,
+        minStock: l.minStock,
+        price: l.price,
+        cost: l.cost,
+        supplier: l.supplier,
+        barcode: l.barcode,
+        isActive: l.isActive
+      }))
+    };
+
+    const dataStr = JSON.stringify(data, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `inventory-export-${new Date().getDate()}-${new Date().getMonth() + 1}-${new Date().getFullYear()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Inventory exported successfully');
+  };
+
   const filteredCategories = categories.filter(category =>
     category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     category.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -358,6 +517,30 @@ export const StoreInventory: React.FC = () => {
             >
               <Plus className="w-4 h-4" />
               Add Contact Lens
+            </Button>
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={exportInventoryTemplate}
+            >
+              <Download className="w-4 h-4" />
+              Download Template
+            </Button>
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={importInventoryData}
+            >
+              <Upload className="w-4 h-4" />
+              Import Data
+            </Button>
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={exportCurrentInventory}
+            >
+              <Download className="w-4 h-4" />
+              Export Current
             </Button>
             <Button 
               variant="primary" 

@@ -46,6 +46,9 @@ export const StoreLayout: React.FC = () => {
   const { storeId } = useParams();
 
   const [store, setStore] = React.useState<any>(null);
+  const [globalSearch, setGlobalSearch] = React.useState('');
+  const [searchResults, setSearchResults] = React.useState<any[]>([]);
+  const [showSearchResults, setShowSearchResults] = React.useState(false);
 
   React.useEffect(() => {
     if (storeId) {
@@ -54,6 +57,54 @@ export const StoreLayout: React.FC = () => {
       setStore(foundStore);
     }
   }, [storeId]);
+
+  // Global search functionality
+  React.useEffect(() => {
+    if (globalSearch.length > 2 && storeId) {
+      const searchTerm = globalSearch.toLowerCase();
+      const results: any[] = [];
+
+      // Search products
+      const products = JSON.parse(localStorage.getItem(`store-${storeId}-products`) || '[]');
+      const matchingProducts = products.filter((p: any) => 
+        p.name.toLowerCase().includes(searchTerm) ||
+        p.sku.toLowerCase().includes(searchTerm) ||
+        p.brand?.toLowerCase().includes(searchTerm)
+      ).map((p: any) => ({ ...p, type: 'product', page: 'inventory' }));
+
+      // Search contact lenses
+      const contactLenses = JSON.parse(localStorage.getItem(`store-${storeId}-contactLenses`) || '[]');
+      const matchingLenses = contactLenses.filter((l: any) => 
+        l.name.toLowerCase().includes(searchTerm) ||
+        l.brand.toLowerCase().includes(searchTerm)
+      ).map((l: any) => ({ ...l, type: 'contact-lens', page: 'inventory' }));
+
+      // Search clients (assuming clients are stored)
+      const clients = JSON.parse(localStorage.getItem(`store-${storeId}-clients`) || '[]');
+      const matchingClients = clients.filter((c: any) => 
+        c.name?.toLowerCase().includes(searchTerm) ||
+        c.email?.toLowerCase().includes(searchTerm)
+      ).map((c: any) => ({ ...c, type: 'client', page: 'clients' }));
+
+      results.push(...matchingProducts, ...matchingLenses, ...matchingClients);
+      setSearchResults(results.slice(0, 10)); // Limit to 10 results
+      setShowSearchResults(results.length > 0);
+    } else {
+      setSearchResults([]);
+      setShowSearchResults(false);
+    }
+  }, [globalSearch, storeId]);
+
+  const handleSearchResultClick = (result: any) => {
+    setShowSearchResults(false);
+    setGlobalSearch('');
+    
+    if (result.page === 'inventory') {
+      navigate(`/store/${storeId}/inventory`);
+    } else if (result.page === 'clients') {
+      navigate(`/store/${storeId}/clients`);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -91,9 +142,44 @@ export const StoreLayout: React.FC = () => {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                   <Input 
-                    placeholder="Search..." 
+                    placeholder="Search products, clients, lenses..." 
                     className="pl-10 w-64 bg-background/50"
+                    value={globalSearch}
+                    onChange={(e) => setGlobalSearch(e.target.value)}
+                    onFocus={() => globalSearch.length > 2 && setShowSearchResults(true)}
                   />
+                  
+                  {/* Search Results Dropdown */}
+                  {showSearchResults && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-50 max-h-80 overflow-y-auto">
+                      {searchResults.map((result, index) => (
+                        <div
+                          key={index}
+                          className="p-3 hover:bg-accent cursor-pointer border-b border-border last:border-b-0"
+                          onClick={() => handleSearchResultClick(result)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-sm">{result.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {result.type === 'product' && `SKU: ${result.sku} | Stock: ${result.stock}`}
+                                {result.type === 'contact-lens' && `${result.brand} | Stock: ${result.stock}`}
+                                {result.type === 'client' && result.email}
+                              </p>
+                            </div>
+                            <div className="text-xs text-muted-foreground capitalize">
+                              {result.type.replace('-', ' ')}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {searchResults.length === 0 && (
+                        <div className="p-3 text-sm text-muted-foreground text-center">
+                          No results found
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -121,6 +207,14 @@ export const StoreLayout: React.FC = () => {
                 </Button>
               </div>
             </div>
+            
+            {/* Search overlay */}
+            {showSearchResults && (
+              <div 
+                className="fixed inset-0 z-40" 
+                onClick={() => setShowSearchResults(false)}
+              />
+            )}
           </header>
 
           {/* Main Content */}
