@@ -1,9 +1,10 @@
 import React from 'react';
-import { Eye, RefreshCw, Printer } from 'lucide-react';
+import { Eye, RefreshCw, Printer, Edit, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Sale } from '@/types/sales';
 
 interface SalesTableProps {
@@ -11,13 +12,15 @@ interface SalesTableProps {
   onViewSale: (sale: Sale) => void;
   onRefundSale: (saleId: string) => void;
   onPrintReceipt: (sale: Sale) => void;
+  onDeleteSale: (saleId: string) => void;
 }
 
 export const SalesTable: React.FC<SalesTableProps> = ({
   sales,
   onViewSale,
   onRefundSale,
-  onPrintReceipt
+  onPrintReceipt,
+  onDeleteSale
 }) => {
   const getStatusBadge = (status: Sale['status']) => {
     const variants = {
@@ -130,6 +133,30 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                         <RefreshCw className="w-4 h-4" />
                       </Button>
                     )}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Sale</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this sale? This action cannot be undone and will restore the inventory.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => onDeleteSale(sale.id)}>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </TableCell>
               </TableRow>

@@ -12,12 +12,22 @@ import { SaleFormData, SaleItem } from '@/types/sales';
 import { Product, ContactLens } from '@/types/inventory';
 import { toast } from 'sonner';
 
+interface Client {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+}
+
 interface SaleFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: SaleFormData) => void;
   products: Product[];
   contactLenses: ContactLens[];
+  clients: Client[];
+  isEditMode?: boolean;
+  editSale?: any;
 }
 
 export const SaleFormModal: React.FC<SaleFormModalProps> = ({
@@ -25,7 +35,10 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
   onClose,
   onSubmit,
   products,
-  contactLenses
+  contactLenses,
+  clients,
+  isEditMode = false,
+  editSale
 }) => {
   const [formData, setFormData] = useState<SaleFormData>({
     items: [],
@@ -35,6 +48,39 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
   });
   
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+
+  // Load edit data
+  React.useEffect(() => {
+    if (isEditMode && editSale) {
+      setFormData({
+        clientId: editSale.clientId,
+        clientName: editSale.clientName,
+        clientEmail: editSale.clientEmail,
+        items: editSale.items.map((item: any) => ({
+          productId: item.productId,
+          productName: item.productName,
+          productType: item.productType,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice
+        })),
+        discount: (editSale.discount / editSale.subtotal) * 100,
+        paymentMethod: editSale.paymentMethod,
+        notes: editSale.notes || ''
+      });
+      
+      const client = clients.find(c => c.id === editSale.clientId);
+      if (client) setSelectedClient(client);
+    } else {
+      setFormData({
+        items: [],
+        discount: 0,
+        paymentMethod: 'cash',
+        notes: ''
+      });
+      setSelectedClient(null);
+    }
+  }, [isEditMode, editSale, clients]);
 
   const allItems = [
     ...products.map(p => ({ ...p, type: 'product' as const })),
@@ -95,7 +141,12 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
       return;
     }
 
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      clientId: selectedClient?.id,
+      clientName: selectedClient?.name || formData.clientName,
+      clientEmail: selectedClient?.email || formData.clientEmail
+    });
     setFormData({
       items: [],
       discount: 0,
@@ -109,21 +160,47 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>New Sale</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Edit Sale' : 'New Sale'}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Customer Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Customer Information</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="clientSelect">Select Customer</Label>
+                <Select
+                  value={selectedClient?.id || ''}
+                  onValueChange={(value) => {
+                    const client = clients.find(c => c.id === value);
+                    setSelectedClient(client || null);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select existing customer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name} - {client.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <Label htmlFor="clientName">Customer Name</Label>
                 <Input
                   id="clientName"
-                  value={formData.clientName || ''}
-                  onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                  value={selectedClient?.name || formData.clientName || ''}
+                  onChange={(e) => {
+                    if (!selectedClient) {
+                      setFormData({ ...formData, clientName: e.target.value });
+                    }
+                  }}
                   placeholder="Enter customer name"
+                  disabled={!!selectedClient}
                 />
               </div>
               <div>
@@ -131,9 +208,14 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
                 <Input
                   id="clientEmail"
                   type="email"
-                  value={formData.clientEmail || ''}
-                  onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
+                  value={selectedClient?.email || formData.clientEmail || ''}
+                  onChange={(e) => {
+                    if (!selectedClient) {
+                      setFormData({ ...formData, clientEmail: e.target.value });
+                    }
+                  }}
                   placeholder="Enter customer email"
+                  disabled={!!selectedClient}
                 />
               </div>
             </div>
@@ -297,7 +379,7 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
             Cancel
           </Button>
           <Button onClick={handleSubmit}>
-            Complete Sale
+            {isEditMode ? 'Update Sale' : 'Complete Sale'}
           </Button>
         </DialogFooter>
       </DialogContent>

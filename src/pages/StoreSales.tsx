@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SaleFormModal } from '@/components/sales/SaleFormModal';
 import { SalesTable } from '@/components/sales/SalesTable';
+import { SaleViewModal } from '@/components/sales/SaleViewModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { Sale, SaleFormData } from '@/types/sales';
 import { Product, ContactLens, DEFAULT_CATEGORIES } from '@/types/inventory';
@@ -18,7 +19,26 @@ export const StoreSales: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [contactLenses, setContactLenses] = useState<ContactLens[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Mock clients data
+  const [clients] = useState([
+    {
+      id: '1',
+      name: 'John Smith',
+      email: 'john@example.com',
+      phone: '+1234567890'
+    },
+    {
+      id: '2', 
+      name: 'Sarah Johnson',
+      email: 'sarah@example.com',
+      phone: '+1234567891'
+    }
+  ]);
 
   // Load sample data
   useEffect(() => {
@@ -138,6 +158,7 @@ export const StoreSales: React.FC = () => {
     const newSale: Sale = {
       id: Date.now().toString(),
       saleNumber: generateSaleNumber(),
+      clientId: formData.clientId,
       clientName: formData.clientName,
       clientEmail: formData.clientEmail,
       items: saleItems,
@@ -153,12 +174,70 @@ export const StoreSales: React.FC = () => {
       storeId: storeId || ''
     };
 
-    setSales([newSale, ...sales]);
-    toast.success('Sale completed successfully!');
+    // Update inventory
+    saleItems.forEach(saleItem => {
+      if (saleItem.productType === 'product') {
+        setProducts(prev => prev.map(product => 
+          product.id === saleItem.productId 
+            ? { ...product, stock: product.stock - saleItem.quantity }
+            : product
+        ));
+      } else {
+        setContactLenses(prev => prev.map(lens => 
+          lens.id === saleItem.productId 
+            ? { ...lens, stock: lens.stock - saleItem.quantity }
+            : lens
+        ));
+      }
+    });
+
+    if (isEditMode && selectedSale) {
+      setSales(sales.map(sale => sale.id === selectedSale.id ? newSale : sale));
+      toast.success('Sale updated successfully!');
+    } else {
+      setSales([newSale, ...sales]);
+      toast.success('Sale completed successfully!');
+    }
+
+    setIsCreateModalOpen(false);
+    setIsEditMode(false);
+    setSelectedSale(null);
   };
 
   const handleViewSale = (sale: Sale) => {
-    toast.info(`Viewing sale ${sale.saleNumber}`);
+    setSelectedSale(sale);
+    setIsViewModalOpen(true);
+  };
+
+  const handleEditSale = (sale: Sale) => {
+    setSelectedSale(sale);
+    setIsEditMode(true);
+    setIsCreateModalOpen(true);
+    setIsViewModalOpen(false);
+  };
+
+  const handleDeleteSale = (saleId: string) => {
+    const sale = sales.find(s => s.id === saleId);
+    if (sale) {
+      // Restore inventory
+      sale.items.forEach(saleItem => {
+        if (saleItem.productType === 'product') {
+          setProducts(prev => prev.map(product => 
+            product.id === saleItem.productId 
+              ? { ...product, stock: product.stock + saleItem.quantity }
+              : product
+          ));
+        } else {
+          setContactLenses(prev => prev.map(lens => 
+            lens.id === saleItem.productId 
+              ? { ...lens, stock: lens.stock + saleItem.quantity }
+              : lens
+          ));
+        }
+      });
+    }
+    setSales(sales.filter(sale => sale.id !== saleId));
+    toast.success('Sale deleted successfully');
   };
 
   const handleRefundSale = (saleId: string) => {
@@ -275,14 +354,33 @@ export const StoreSales: React.FC = () => {
         onViewSale={handleViewSale}
         onRefundSale={handleRefundSale}
         onPrintReceipt={handlePrintReceipt}
+        onDeleteSale={handleDeleteSale}
       />
 
       <SaleFormModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setIsEditMode(false);
+          setSelectedSale(null);
+        }}
         onSubmit={handleCreateSale}
         products={products}
         contactLenses={contactLenses}
+        clients={clients}
+        isEditMode={isEditMode}
+        editSale={selectedSale}
+      />
+
+      <SaleViewModal
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setSelectedSale(null);
+        }}
+        sale={selectedSale}
+        onEdit={handleEditSale}
+        onPrint={handlePrintReceipt}
       />
     </div>
   );
