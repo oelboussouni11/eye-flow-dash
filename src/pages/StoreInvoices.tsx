@@ -8,8 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SaleViewModal } from '@/components/sales/SaleViewModal';
+import { SaleFormModal } from '@/components/sales/SaleFormModal';
 import { useAuth } from '@/contexts/AuthContext';
-import { Sale } from '@/types/sales';
+import { Sale, SaleFormData } from '@/types/sales';
+import { Product, ContactLens } from '@/types/inventory';
 import { toast } from 'sonner';
 
 export const StoreInvoices: React.FC = () => {
@@ -20,10 +22,91 @@ export const StoreInvoices: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [contactLenses, setContactLenses] = useState<ContactLens[]>([]);
+  const [clients] = useState([
+    {
+      id: '1',
+      name: 'John Smith',
+      email: 'john@example.com',
+      phone: '+1234567890'
+    },
+    {
+      id: '2', 
+      name: 'Sarah Johnson',
+      email: 'sarah@example.com',
+      phone: '+1234567891'
+    }
+  ]);
 
-  // Load sales data (same as StoreSales page)
+  // Load sample data
   useEffect(() => {
+    // Load products for editing
+    setProducts([
+      {
+        id: '1',
+        name: 'Daily Comfort Drops',
+        description: 'Gentle daily comfort eye drops',
+        sku: 'DCD001',
+        categoryId: '1',
+        price: 15.99,
+        cost: 8.99,
+        stock: 50,
+        minStock: 10,
+        brand: 'OptiCare',
+        images: [],
+        attributes: {},
+        isActive: true,
+        storeId: storeId || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '2',
+        name: 'Blue Light Glasses',
+        description: 'Blue light blocking glasses',
+        sku: 'BLG001',
+        categoryId: '2',
+        price: 89.99,
+        cost: 45.99,
+        stock: 25,
+        minStock: 5,
+        brand: 'TechVision',
+        images: [],
+        attributes: {},
+        isActive: true,
+        storeId: storeId || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ]);
+
+    // Load contact lenses for editing
+    setContactLenses([
+      {
+        id: '1',
+        name: 'Daily Comfort',
+        category: 'lentilles',
+        brand: 'ClearVision',
+        type: 'daily',
+        material: 'Silicone Hydrogel',
+        diameter: 14.2,
+        baseCurve: 8.5,
+        power: '0.00',
+        stock: 100,
+        minStock: 20,
+        price: 35.99,
+        cost: 18.99,
+        images: [],
+        isActive: true,
+        storeId: storeId || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ]);
     // Sample invoices data
     setSales([
       {
@@ -135,8 +218,10 @@ export const StoreInvoices: React.FC = () => {
   };
 
   const handleEditInvoice = (sale: Sale) => {
-    // Navigate to sales page with edit mode
-    toast.info('Redirecting to sales page for editing...');
+    setSelectedSale(sale);
+    setIsEditMode(true);
+    setIsFormModalOpen(true);
+    setIsViewModalOpen(false);
   };
 
   const handlePrintInvoice = (sale: Sale) => {
@@ -495,6 +580,42 @@ export const StoreInvoices: React.FC = () => {
         sale={selectedSale}
         onEdit={handleEditInvoice}
         onPrint={handlePrintInvoice}
+      />
+
+      {/* Edit Sale Modal */}
+      <SaleFormModal
+        isOpen={isFormModalOpen}
+        onClose={() => {
+          setIsFormModalOpen(false);
+          setIsEditMode(false);
+          setSelectedSale(null);
+        }}
+        onSubmit={(formData: SaleFormData) => {
+          // Update sale logic here
+          const updatedSale = selectedSale ? {
+            ...selectedSale,
+            clientName: formData.clientName,
+            clientEmail: formData.clientEmail,
+            notes: formData.notes,
+            // Update other fields as needed
+          } : null;
+          
+          if (updatedSale) {
+            setSales(prev => prev.map(sale => 
+              sale.id === updatedSale.id ? updatedSale : sale
+            ));
+            toast.success('Invoice updated successfully!');
+          }
+          
+          setIsFormModalOpen(false);
+          setIsEditMode(false);
+          setSelectedSale(null);
+        }}
+        products={products}
+        contactLenses={contactLenses}
+        clients={clients}
+        isEditMode={isEditMode}
+        editSale={selectedSale}
       />
     </div>
   );

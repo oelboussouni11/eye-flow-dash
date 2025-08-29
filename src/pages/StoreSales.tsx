@@ -333,7 +333,189 @@ export const StoreSales: React.FC = () => {
   };
 
   const handlePrintReceipt = (sale: Sale) => {
-    toast.info(`Printing receipt for ${sale.saleNumber}`);
+    // Get store configuration
+    const storeConfig = localStorage.getItem(`store-${storeId}-config`);
+    const config = storeConfig ? JSON.parse(storeConfig) : {
+      storeName: 'Beom Optic Store',
+      address: '123 Main Street, City, State 12345',
+      phone: '(555) 123-4567',
+      email: 'info@beomoptic.com',
+      taxId: '123-456-789'
+    };
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const invoiceHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Invoice ${sale.saleNumber}</title>
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; color: #333; }
+          .invoice-container { max-width: 800px; margin: 0 auto; background: white; }
+          .header { text-align: center; margin-bottom: 40px; }
+          .store-info { font-size: 18px; font-weight: bold; color: #2563eb; margin-bottom: 10px; }
+          .store-details { font-size: 14px; color: #666; line-height: 1.4; }
+          .invoice-title { font-size: 36px; font-weight: bold; color: #1e40af; margin: 20px 0 10px; }
+          .invoice-number { font-size: 20px; color: #64748b; }
+          .billing-section { display: flex; justify-content: space-between; margin: 40px 0; }
+          .billing-info { flex: 1; }
+          .billing-info h3 { font-size: 16px; font-weight: bold; margin-bottom: 10px; color: #374151; }
+          .billing-details { font-size: 14px; line-height: 1.6; color: #666; }
+          .items-section { margin: 30px 0; }
+          .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+          .items-table th { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 8px; text-align: left; font-weight: 600; color: #374151; }
+          .items-table td { border: 1px solid #e2e8f0; padding: 12px 8px; }
+          .items-table tbody tr:nth-child(even) { background: #f9fafb; }
+          .summary-section { margin-left: auto; width: 350px; }
+          .summary-table { width: 100%; }
+          .summary-table td { padding: 8px; border-bottom: 1px solid #e5e7eb; }
+          .summary-table .total-row { font-weight: bold; font-size: 18px; border-top: 2px solid #374151; color: #1e40af; }
+          .payment-section { margin-top: 30px; }
+          .payment-status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+          .status-paid { background: #dcfce7; color: #166534; }
+          .status-partial { background: #fef3c7; color: #92400e; }
+          .status-unpaid { background: #fee2e2; color: #dc2626; }
+          .notes-section { margin-top: 30px; padding: 20px; background: #f8fafc; border-radius: 8px; }
+          .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #9ca3af; }
+          @media print { 
+            body { margin: 0; padding: 10px; } 
+            .invoice-container { box-shadow: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-container">
+          <div class="header">
+            <div class="store-info">${config.storeName}</div>
+            <div class="store-details">
+              ${config.address}<br>
+              Phone: ${config.phone} | Email: ${config.email}<br>
+              ${config.taxId ? `Tax ID: ${config.taxId}` : ''}
+            </div>
+            <div class="invoice-title">INVOICE</div>
+            <div class="invoice-number">#${sale.saleNumber}</div>
+          </div>
+
+          <div class="billing-section">
+            <div class="billing-info">
+              <h3>Bill To:</h3>
+              <div class="billing-details">
+                ${sale.clientName || 'Walk-in Customer'}<br>
+                ${sale.clientEmail || ''}
+              </div>
+            </div>
+            <div class="billing-info">
+              <h3>Invoice Details:</h3>
+              <div class="billing-details">
+                <strong>Date:</strong> ${new Date(sale.createdAt).toLocaleDateString()}<br>
+                <strong>Status:</strong> <span class="payment-status status-${sale.status}">${sale.status}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="items-section">
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th style="text-align: center;">Qty</th>
+                  <th style="text-align: right;">Unit Price</th>
+                  <th style="text-align: right;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${sale.items.map(item => `
+                  <tr>
+                    <td>${item.productName}</td>
+                    <td style="text-align: center;">${item.quantity}</td>
+                    <td style="text-align: right;">$${item.unitPrice.toFixed(2)}</td>
+                    <td style="text-align: right;">$${item.totalPrice.toFixed(2)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+
+            <div class="summary-section">
+              <table class="summary-table">
+                <tr>
+                  <td>Subtotal:</td>
+                  <td style="text-align: right;">$${sale.subtotal.toFixed(2)}</td>
+                </tr>
+                ${sale.discount > 0 ? `
+                  <tr>
+                    <td>Discount:</td>
+                    <td style="text-align: right;">-$${sale.discount.toFixed(2)}</td>
+                  </tr>
+                ` : ''}
+                <tr>
+                  <td>Tax:</td>
+                  <td style="text-align: right;">$${sale.tax.toFixed(2)}</td>
+                </tr>
+                <tr class="total-row">
+                  <td>Total:</td>
+                  <td style="text-align: right;">$${sale.total.toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td>Paid:</td>
+                  <td style="text-align: right;">$${sale.paidAmount.toFixed(2)}</td>
+                </tr>
+                ${sale.remainingAmount > 0 ? `
+                  <tr>
+                    <td>Balance Due:</td>
+                    <td style="text-align: right; color: #dc2626; font-weight: bold;">$${sale.remainingAmount.toFixed(2)}</td>
+                  </tr>
+                ` : ''}
+              </table>
+            </div>
+          </div>
+
+          ${sale.payments && sale.payments.length > 0 ? `
+            <div class="payment-section">
+              <h3>Payment History</h3>
+              <table class="items-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Method</th>
+                    <th style="text-align: right;">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${sale.payments.map(payment => `
+                    <tr>
+                      <td>${new Date(payment.date).toLocaleDateString()}</td>
+                      <td>${payment.method.charAt(0).toUpperCase() + payment.method.slice(1)}</td>
+                      <td style="text-align: right;">$${payment.amount.toFixed(2)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          ` : ''}
+
+          ${sale.notes ? `
+            <div class="notes-section">
+              <strong>Notes:</strong><br>
+              ${sale.notes}
+            </div>
+          ` : ''}
+          
+          <div class="footer">
+            Thank you for your business!<br>
+            For questions about this invoice, please contact us at ${config.email}
+          </div>
+        </div>
+        
+        <script>window.print(); window.close();</script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(invoiceHtml);
+    printWindow.document.close();
+    toast.success('Invoice sent to printer');
   };
 
   const filteredSales = sales.filter(sale =>
