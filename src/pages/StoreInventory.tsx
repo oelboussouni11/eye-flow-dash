@@ -153,7 +153,7 @@ export const StoreInventory: React.FC = () => {
       product.brand?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesLowStock = !showLowStock || product.stock <= product.minStock;
-    const matchesActive = showInactive || product.isActive;
+    const matchesActive = !showInactive ? product.isActive : true;
     
     return matchesSearch && matchesLowStock && matchesActive;
   });
@@ -243,7 +243,7 @@ export const StoreInventory: React.FC = () => {
             onClick={() => setShowInactive(!showInactive)}
             className="flex items-center gap-2"
           >
-            Show Inactive
+            {showInactive ? "Show Active Only" : "Show Inactive"}
           </Button>
         </div>
       </div>

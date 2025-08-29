@@ -33,8 +33,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const getStockStatus = () => {
     if (product.stock <= 0) return { status: 'out', color: 'destructive' as const };
-    if (product.stock <= product.minStock) return { status: 'low', color: 'secondary' as const };
-    return { status: 'good', color: 'default' as const };
+    if (product.stock <= product.minStock) return { status: 'low', color: 'warning' as const };
+    return { status: 'good', color: 'success' as const };
   };
 
   const stockStatus = getStockStatus();
