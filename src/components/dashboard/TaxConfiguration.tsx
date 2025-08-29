@@ -11,6 +11,15 @@ export const TaxConfiguration: React.FC = () => {
   const { taxRate, setTaxRate } = useTax();
   const [tempTaxRate, setTempTaxRate] = useState(taxRate.toString());
 
+  // Sync with context when taxRate changes
+  React.useEffect(() => {
+    setTempTaxRate(taxRate.toString());
+  }, [taxRate]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTempTaxRate(e.target.value);
+  };
+
   const handleSave = () => {
     const newRate = parseFloat(tempTaxRate);
     if (isNaN(newRate) || newRate < 0 || newRate > 100) {
@@ -43,7 +52,7 @@ export const TaxConfiguration: React.FC = () => {
               min="0"
               max="100"
               value={tempTaxRate}
-              onChange={(e) => setTempTaxRate(e.target.value)}
+              onChange={handleInputChange}
               placeholder="Enter tax rate"
             />
             <Button onClick={handleSave} size="sm">
