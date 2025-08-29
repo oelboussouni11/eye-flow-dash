@@ -89,7 +89,7 @@ export const DEFAULT_CATEGORIES: Omit<Category, 'id' | 'storeId' | 'createdAt' |
   {
     name: 'Solaires',
     description: 'Sunglasses',
-    color: 'hsl(var(--secondary))',
+    color: 'hsl(var(--warning))',
     icon: 'sun',
     isDefault: true,
   },
