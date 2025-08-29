@@ -17,8 +17,8 @@ export interface Store {
 
 interface StoreCardProps {
   store: Store;
-  onEdit: (store: Store) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (store: Store) => void;
+  onDelete?: (id: string) => void;
   onView: (store: Store) => void;
   canEdit?: boolean;
 }
@@ -73,28 +73,28 @@ export const StoreCard: React.FC<StoreCardProps> = ({
 
       <CardFooter className="flex items-center justify-between pt-2">
         <div className="flex items-center gap-2">          
-          {canEdit && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onEdit(store)}
-                className="flex items-center gap-1"
-              >
-                <Edit className="w-3 h-3" />
-                Edit
-              </Button>
-              
-              <Button
-                variant="delete"
-                size="sm"
-                onClick={() => onDelete(store.id)}
-                className="flex items-center gap-1"
-              >
-                <Trash2 className="w-3 h-3" />
-                Delete
-              </Button>
-            </>
+          {canEdit && onEdit && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(store)}
+              className="flex items-center gap-1"
+            >
+              <Edit className="w-3 h-3" />
+              Edit
+            </Button>
+          )}
+          
+          {canEdit && onDelete && (
+            <Button
+              variant="delete"
+              size="sm"
+              onClick={() => onDelete(store.id)}
+              className="flex items-center gap-1"
+            >
+              <Trash2 className="w-3 h-3" />
+              Delete
+            </Button>
           )}
         </div>
         
