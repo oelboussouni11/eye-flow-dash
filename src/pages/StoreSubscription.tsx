@@ -52,7 +52,7 @@ export const StoreSubscription: React.FC = () => {
     accountName: 'Beom Optic SaaS Solutions',
     iban: 'GB82 WEST 1234 5698 7654 32',
     bic: 'WESTGB2L',
-    reference: `BEOM-${storeId}`
+    reference: "BEOM-ALLSTORES"
   };
 
   useEffect(() => {
@@ -62,7 +62,7 @@ export const StoreSubscription: React.FC = () => {
       setStore(foundStore);
 
       // Load payment records from localStorage
-      const savedRecords = localStorage.getItem(`subscription-payments-${storeId}`);
+      const savedRecords = localStorage.getItem("subscription-payments-global");
       if (savedRecords) {
         setPaymentRecords(JSON.parse(savedRecords));
       } else {
@@ -166,7 +166,7 @@ export const StoreSubscription: React.FC = () => {
           }
         ];
         setPaymentRecords(sampleRecords);
-        localStorage.setItem(`subscription-payments-${storeId}`, JSON.stringify(sampleRecords));
+        localStorage.setItem("subscription-payments-global", JSON.stringify(sampleRecords));
       }
     }
   }, [storeId]);
@@ -196,7 +196,7 @@ export const StoreSubscription: React.FC = () => {
         });
         
         setPaymentRecords(updatedRecords);
-        localStorage.setItem(`subscription-payments-${storeId}`, JSON.stringify(updatedRecords));
+        localStorage.setItem("subscription-payments-global", JSON.stringify(updatedRecords));
         setUploadingMonth(null);
         setSelectedFile(null);
       };
@@ -238,9 +238,9 @@ export const StoreSubscription: React.FC = () => {
           className="w-12 h-12"
         />
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Beom Optic SaaS Subscription</h1>
+          <h1 className="text-3xl font-bold text-foreground">Beom Optic Subscription</h1>
           <p className="text-muted-foreground mt-1">
-            Manage your subscription and payment records for {store.name}
+            Manage your subscription and payment records for all stores
           </p>
         </div>
       </div>

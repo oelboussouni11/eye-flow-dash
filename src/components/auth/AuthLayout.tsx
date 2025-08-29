@@ -73,10 +73,14 @@ export const AuthLayout: React.FC = () => {
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-primary rounded-2xl shadow-glow mb-4">
-            <Store className="w-8 h-8 text-primary-foreground" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-glow mb-4">
+            <img 
+              src="/lovable-uploads/047f64ca-2cda-4a19-964a-13f5ac9d17ed.png" 
+              alt="Beom Optic Logo" 
+              className="w-12 h-12"
+            />
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">OptiSaaS</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Beom Optic</h1>
           <p className="text-muted-foreground">Professional optician management</p>
         </div>
 
