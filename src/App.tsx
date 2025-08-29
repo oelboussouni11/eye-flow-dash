@@ -18,6 +18,7 @@ import { StoreClients } from "@/pages/StoreClients";
 import { StoreInventory } from "@/pages/StoreInventory";
 import { StoreSales } from "@/pages/StoreSales";
 import { StoreInvoices } from "@/pages/StoreInvoices";
+import { StoreSubscription } from "@/pages/StoreSubscription";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const AppContent = () => {
         <Route path="inventory" element={<StoreInventory />} />
         <Route path="sales" element={<StoreSales />} />
         <Route path="invoices" element={<StoreInvoices />} />
+        <Route path="subscription" element={<StoreSubscription />} />
       </Route>
       
       <Route path="*" element={<NotFound />} />

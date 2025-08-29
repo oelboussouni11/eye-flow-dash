@@ -11,7 +11,8 @@ import {
   Search,
   ShoppingCart,
   BarChart3,
-  Contact
+  Contact,
+  CreditCard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +39,7 @@ const storeNavigation = [
   { name: 'Inventory', href: '/store/:storeId/inventory', icon: Package },
   { name: 'Sales', href: '/store/:storeId/sales', icon: ShoppingCart },
   { name: 'Invoices', href: '/store/:storeId/invoices', icon: FileText },
+  { name: 'Subscription', href: '/store/:storeId/subscription', icon: CreditCard },
 ];
 
 export const StoreLayout: React.FC = () => {
