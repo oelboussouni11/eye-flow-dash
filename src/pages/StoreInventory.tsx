@@ -29,7 +29,7 @@ export const StoreInventory: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('products');
   const [showLowStock, setShowLowStock] = useState(false);
-  const [showInactive, setShowInactive] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
   // Initialize data from localStorage or defaults
   useEffect(() => {
@@ -189,7 +189,14 @@ export const StoreInventory: React.FC = () => {
       product.brand?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesLowStock = !showLowStock || product.stock <= product.minStock;
-    const matchesActive = !showInactive ? product.isActive : true;
+    
+    let matchesActive = true;
+    if (activeFilter === 'active') {
+      matchesActive = product.isActive;
+    } else if (activeFilter === 'inactive') {
+      matchesActive = !product.isActive;
+    }
+    // If activeFilter === 'all', matchesActive stays true
     
     return matchesSearch && matchesLowStock && matchesActive;
   });
@@ -274,12 +281,22 @@ export const StoreInventory: React.FC = () => {
             {showLowStock ? "Show All" : `Low Stock ${lowStockCount > 0 ? `(${lowStockCount})` : ''}`}
           </Button>
           <Button 
-            variant={showInactive ? "default" : "outline"}
+            variant={activeFilter !== 'all' ? "default" : "outline"}
             size="sm"
-            onClick={() => setShowInactive(!showInactive)}
+            onClick={() => {
+              if (activeFilter === 'all') {
+                setActiveFilter('active');
+              } else if (activeFilter === 'active') {
+                setActiveFilter('inactive');
+              } else {
+                setActiveFilter('all');
+              }
+            }}
             className="flex items-center gap-2"
           >
-            {showInactive ? "Show Active Only" : "Show Inactive"}
+            {activeFilter === 'all' && 'Show All Products'}
+            {activeFilter === 'active' && 'Active Only'}
+            {activeFilter === 'inactive' && 'Inactive Only'}
           </Button>
         </div>
       </div>
