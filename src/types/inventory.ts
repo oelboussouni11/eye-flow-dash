@@ -64,6 +64,32 @@ export interface LensOrder {
   updatedAt: string;
 }
 
+export interface ContactLens {
+  id: string;
+  name: string;
+  brand: string;
+  type: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  material: string;
+  diameter: number;
+  baseCurve: number;
+  power: string; // e.g., "-2.00", "+1.50", "0.00"
+  cylinder?: string; // For astigmatism
+  axis?: number; // For astigmatism
+  addition?: string; // For multifocal
+  color?: string; // For colored lenses
+  stock: number;
+  minStock: number;
+  price: number;
+  cost: number;
+  supplier?: string;
+  barcode?: string;
+  images: string[];
+  isActive: boolean;
+  storeId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const DEFAULT_CATEGORIES: Omit<Category, 'id' | 'storeId' | 'createdAt' | 'updatedAt'>[] = [
   {
     name: 'Lunettes',

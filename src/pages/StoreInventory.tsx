@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Plus, Search, Filter, Package, Eye, Clock, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Filter, Package, Eye, Clock, AlertTriangle, Contact } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,8 @@ import { CategoryFormModal } from '@/components/inventory/CategoryFormModal';
 import { ProductCard } from '@/components/inventory/ProductCard';
 import { ProductFormModal } from '@/components/inventory/ProductFormModal';
 import { LensOrderCard } from '@/components/inventory/LensOrderCard';
-import { Category, Product, LensOrder, DEFAULT_CATEGORIES } from '@/types/inventory';
+import { ContactLensCard } from '@/components/inventory/ContactLensCard';
+import { Category, Product, LensOrder, ContactLens, DEFAULT_CATEGORIES } from '@/types/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -20,6 +21,7 @@ export const StoreInventory: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [lensOrders, setLensOrders] = useState<LensOrder[]>([]);
+  const [contactLenses, setContactLenses] = useState<ContactLens[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
@@ -62,6 +64,12 @@ export const StoreInventory: React.FC = () => {
     if (savedLensOrders) {
       setLensOrders(JSON.parse(savedLensOrders));
     }
+
+    // Load contact lenses
+    const savedContactLenses = localStorage.getItem(`${storeKey}-contactLenses`);
+    if (savedContactLenses) {
+      setContactLenses(JSON.parse(savedContactLenses));
+    }
   }, [storeId]);
 
   // Save data to localStorage whenever it changes
@@ -82,6 +90,12 @@ export const StoreInventory: React.FC = () => {
       localStorage.setItem(`store-${storeId}-lensOrders`, JSON.stringify(lensOrders));
     }
   }, [lensOrders, storeId]);
+
+  useEffect(() => {
+    if (storeId) {
+      localStorage.setItem(`store-${storeId}-contactLenses`, JSON.stringify(contactLenses));
+    }
+  }, [contactLenses, storeId]);
 
   const handleAddCategory = (data: any) => {
     const newCategory: Category = {
@@ -201,9 +215,30 @@ export const StoreInventory: React.FC = () => {
     return matchesSearch && matchesLowStock && matchesActive;
   });
 
+  const filteredContactLenses = contactLenses.filter(lens => {
+    const matchesSearch = lens.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lens.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lens.power.includes(searchQuery);
+    
+    const matchesLowStock = !showLowStock || lens.stock <= lens.minStock;
+    
+    let matchesActive = true;
+    if (activeFilter === 'active') {
+      matchesActive = lens.isActive;
+    } else if (activeFilter === 'inactive') {
+      matchesActive = !lens.isActive;
+    }
+    
+    return matchesSearch && matchesLowStock && matchesActive;
+  });
+
   // Count products with low stock for alert
   const lowStockCount = products.filter(p => p.stock <= p.minStock && p.stock > 0).length;
   const outOfStockCount = products.filter(p => p.stock <= 0).length;
+  
+  // Count contact lenses with low stock
+  const lowStockLensesCount = contactLenses.filter(l => l.stock <= l.minStock && l.stock > 0).length;
+  const outOfStockLensesCount = contactLenses.filter(l => l.stock <= 0).length;
 
   const filteredLensOrders = lensOrders.filter(order =>
     order.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -222,18 +257,30 @@ export const StoreInventory: React.FC = () => {
           <p className="text-muted-foreground mt-1">
             Manage products and stock levels for this store
           </p>
-          {(lowStockCount > 0 || outOfStockCount > 0) && (
+          {(lowStockCount > 0 || outOfStockCount > 0 || lowStockLensesCount > 0 || outOfStockLensesCount > 0) && (
             <div className="flex gap-2 mt-2">
               {lowStockCount > 0 && (
                 <Badge variant="secondary" className="text-xs">
                   <AlertTriangle className="w-3 h-3 mr-1" />
-                  {lowStockCount} Low Stock
+                  {lowStockCount} Products Low Stock
                 </Badge>
               )}
               {outOfStockCount > 0 && (
                 <Badge variant="destructive" className="text-xs">
                   <AlertTriangle className="w-3 h-3 mr-1" />
-                  {outOfStockCount} Out of Stock
+                  {outOfStockCount} Products Out of Stock
+                </Badge>
+              )}
+              {lowStockLensesCount > 0 && (
+                <Badge variant="warning" className="text-xs">
+                  <AlertTriangle className="w-3 h-3 mr-1" />
+                  {lowStockLensesCount} Lentilles Low Stock
+                </Badge>
+              )}
+              {outOfStockLensesCount > 0 && (
+                <Badge variant="destructive" className="text-xs">
+                  <AlertTriangle className="w-3 h-3 mr-1" />
+                  {outOfStockLensesCount} Lentilles Out of Stock
                 </Badge>
               )}
             </div>
@@ -264,6 +311,7 @@ export const StoreInventory: React.FC = () => {
           <Input 
             placeholder={activeTab === 'products' ? 'Search products...' : 
                         activeTab === 'categories' ? 'Search categories...' : 
+                        activeTab === 'contact-lenses' ? 'Search contact lenses...' :
                         'Search lens orders...'} 
             className="pl-10" 
             value={searchQuery}
@@ -302,11 +350,15 @@ export const StoreInventory: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="products">Products</TabsTrigger>
           <TabsTrigger value="lens-orders">
             <Eye className="w-4 h-4 mr-2" />
             Lens Orders
+          </TabsTrigger>
+          <TabsTrigger value="contact-lenses">
+            <Contact className="w-4 h-4 mr-2" />
+            Lentilles
           </TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
         </TabsList>
@@ -376,6 +428,68 @@ export const StoreInventory: React.FC = () => {
               <p className="text-muted-foreground mb-4">
                 {searchQuery ? 'Try adjusting your search terms' : 'Lens orders will appear here when clients place orders'}
               </p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="contact-lenses" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredContactLenses.map((lens) => (
+              <ContactLensCard
+                key={lens.id}
+                lens={lens}
+                onEdit={() => {
+                  toast.info(`Editing ${lens.name}`);
+                }}
+                onDelete={() => {
+                  setContactLenses(contactLenses.filter(l => l.id !== lens.id));
+                  toast.success('Contact lens deleted successfully');
+                }}
+                onClick={() => {
+                  toast.info(`Viewing ${lens.name} details`);
+                }}
+              />
+            ))}
+          </div>
+
+          {filteredContactLenses.length === 0 && (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <Contact className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium text-foreground mb-2">No contact lenses found</h3>
+              <p className="text-muted-foreground mb-4">
+                {searchQuery ? 'Try adjusting your search terms' : 'Add your first contact lenses to start managing inventory'}
+              </p>
+              {!searchQuery && canManageInventory && (
+                <Button variant="primary" onClick={() => {
+                  // For now, add a sample contact lens
+                  const sampleLens: ContactLens = {
+                    id: `lens-${Date.now()}`,
+                    name: 'Acuvue Oasys',
+                    brand: 'Johnson & Johnson',
+                    type: 'daily',
+                    material: 'Silicone Hydrogel',
+                    diameter: 14.0,
+                    baseCurve: 8.5,
+                    power: '-2.00',
+                    stock: 50,
+                    minStock: 10,
+                    price: 45.99,
+                    cost: 25.00,
+                    images: [],
+                    isActive: true,
+                    storeId: storeId || '',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                  };
+                  setContactLenses([...contactLenses, sampleLens]);
+                  toast.success('Sample contact lens added');
+                }}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Sample Contact Lens
+                </Button>
+              )}
             </div>
           )}
         </TabsContent>
