@@ -31,7 +31,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
   { name: 'Stores', href: '/dashboard/stores', icon: Store, requiredPermission: 'stores' },
   { name: 'Employees', href: '/dashboard/employees', icon: Users, ownerOnly: true },
-  { name: 'Subscription', href: '/dashboard/subscription', icon: CreditCard },
+  { name: 'Subscription', href: '/dashboard/subscription', icon: CreditCard, ownerOnly: true },
 ];
 
 export const DashboardLayout: React.FC = () => {
