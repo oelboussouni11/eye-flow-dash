@@ -31,9 +31,15 @@ export const StoreInventory: React.FC = () => {
   const [showLowStock, setShowLowStock] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
 
-  // Initialize default categories on first load
+  // Initialize data from localStorage or defaults
   useEffect(() => {
-    const initializeCategories = () => {
+    const storeKey = `store-${storeId}`;
+    
+    // Load categories
+    const savedCategories = localStorage.getItem(`${storeKey}-categories`);
+    if (savedCategories) {
+      setCategories(JSON.parse(savedCategories));
+    } else {
       const defaultCats: Category[] = DEFAULT_CATEGORIES.map((cat, index) => ({
         ...cat,
         id: `default-${index}`,
@@ -42,10 +48,40 @@ export const StoreInventory: React.FC = () => {
         updatedAt: new Date().toISOString(),
       }));
       setCategories(defaultCats);
-    };
+      localStorage.setItem(`${storeKey}-categories`, JSON.stringify(defaultCats));
+    }
 
-    initializeCategories();
+    // Load products
+    const savedProducts = localStorage.getItem(`${storeKey}-products`);
+    if (savedProducts) {
+      setProducts(JSON.parse(savedProducts));
+    }
+
+    // Load lens orders
+    const savedLensOrders = localStorage.getItem(`${storeKey}-lensOrders`);
+    if (savedLensOrders) {
+      setLensOrders(JSON.parse(savedLensOrders));
+    }
   }, [storeId]);
+
+  // Save data to localStorage whenever it changes
+  useEffect(() => {
+    if (storeId && categories.length > 0) {
+      localStorage.setItem(`store-${storeId}-categories`, JSON.stringify(categories));
+    }
+  }, [categories, storeId]);
+
+  useEffect(() => {
+    if (storeId) {
+      localStorage.setItem(`store-${storeId}-products`, JSON.stringify(products));
+    }
+  }, [products, storeId]);
+
+  useEffect(() => {
+    if (storeId) {
+      localStorage.setItem(`store-${storeId}-lensOrders`, JSON.stringify(lensOrders));
+    }
+  }, [lensOrders, storeId]);
 
   const handleAddCategory = (data: any) => {
     const newCategory: Category = {
