@@ -11,6 +11,7 @@ import { ProductCard } from '@/components/inventory/ProductCard';
 import { ProductFormModal } from '@/components/inventory/ProductFormModal';
 import { LensOrderCard } from '@/components/inventory/LensOrderCard';
 import { ContactLensCard } from '@/components/inventory/ContactLensCard';
+import { ContactLensFormModal } from '@/components/inventory/ContactLensFormModal';
 import { Category, Product, LensOrder, ContactLens, DEFAULT_CATEGORIES } from '@/types/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -24,14 +25,18 @@ export const StoreInventory: React.FC = () => {
   const [contactLenses, setContactLenses] = useState<ContactLens[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedContactLens, setSelectedContactLens] = useState<ContactLens | null>(null);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [isEditCategoryOpen, setIsEditCategoryOpen] = useState(false);
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [isEditProductOpen, setIsEditProductOpen] = useState(false);
+  const [isAddContactLensOpen, setIsAddContactLensOpen] = useState(false);
+  const [isEditContactLensOpen, setIsEditContactLensOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('products');
   const [showLowStock, setShowLowStock] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [lensFilter, setLensFilter] = useState<'all' | 'lentilles' | 'produits'>('all');
 
   // Initialize data from localStorage or defaults
   useEffect(() => {
@@ -192,6 +197,52 @@ export const StoreInventory: React.FC = () => {
     toast.success('Product deleted successfully');
   };
 
+  const handleAddContactLens = (data: any) => {
+    // Check for duplicate name
+    const existingName = contactLenses.find(l => l.name.toLowerCase() === data.name.toLowerCase());
+    if (existingName) {
+      toast.error('A contact lens with this name already exists');
+      return;
+    }
+
+    const newContactLens: ContactLens = {
+      id: `lens-${Date.now()}`,
+      ...data,
+      storeId: storeId || '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setContactLenses([...contactLenses, newContactLens]);
+    toast.success('Contact lens created successfully');
+  };
+
+  const handleEditContactLens = (data: any) => {
+    if (!selectedContactLens) return;
+    
+    // Check for duplicate name (excluding current lens)
+    const existingName = contactLenses.find(l => 
+      l.id !== selectedContactLens.id && l.name.toLowerCase() === data.name.toLowerCase()
+    );
+    if (existingName) {
+      toast.error('A contact lens with this name already exists');
+      return;
+    }
+    
+    const updatedContactLenses = contactLenses.map(lens =>
+      lens.id === selectedContactLens.id
+        ? { ...lens, ...data, updatedAt: new Date().toISOString() }
+        : lens
+    );
+    setContactLenses(updatedContactLenses);
+    setSelectedContactLens(null);
+    toast.success('Contact lens updated successfully');
+  };
+
+  const handleDeleteContactLens = (lensId: string) => {
+    setContactLenses(contactLenses.filter(lens => lens.id !== lensId));
+    toast.success('Contact lens deleted successfully');
+  };
+
   const filteredCategories = categories.filter(category =>
     category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     category.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -218,7 +269,7 @@ export const StoreInventory: React.FC = () => {
   const filteredContactLenses = contactLenses.filter(lens => {
     const matchesSearch = lens.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       lens.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lens.power.includes(searchQuery);
+      (lens.power && lens.power.includes(searchQuery));
     
     const matchesLowStock = !showLowStock || lens.stock <= lens.minStock;
     
@@ -228,8 +279,15 @@ export const StoreInventory: React.FC = () => {
     } else if (activeFilter === 'inactive') {
       matchesActive = !lens.isActive;
     }
+
+    let matchesCategory = true;
+    if (lensFilter === 'lentilles') {
+      matchesCategory = lens.category === 'lentilles';
+    } else if (lensFilter === 'produits') {
+      matchesCategory = lens.category === 'produits';
+    }
     
-    return matchesSearch && matchesLowStock && matchesActive;
+    return matchesSearch && matchesLowStock && matchesActive && matchesCategory;
   });
 
   // Count products with low stock for alert
@@ -294,6 +352,14 @@ export const StoreInventory: React.FC = () => {
               Add Category
             </Button>
             <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => setIsAddContactLensOpen(true)}
+            >
+              <Plus className="w-4 h-4" />
+              Add Contact Lens
+            </Button>
+            <Button 
               variant="primary" 
               className="flex items-center gap-2"
               onClick={() => setIsAddProductOpen(true)}
@@ -318,35 +384,55 @@ export const StoreInventory: React.FC = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant={showLowStock ? "default" : "outline"}
-            size="sm"
-            onClick={() => setShowLowStock(!showLowStock)}
-            className="flex items-center gap-2"
-          >
-            <Filter className="w-4 h-4" />
-            {showLowStock ? "Show All" : `Low Stock ${lowStockCount > 0 ? `(${lowStockCount})` : ''}`}
-          </Button>
-          <Button 
-            variant={activeFilter !== 'all' ? "default" : "outline"}
-            size="sm"
-            onClick={() => {
-              if (activeFilter === 'all') {
-                setActiveFilter('active');
-              } else if (activeFilter === 'active') {
-                setActiveFilter('inactive');
-              } else {
-                setActiveFilter('all');
-              }
-            }}
-            className="flex items-center gap-2"
-          >
-            {activeFilter === 'all' && 'Show All Products'}
-            {activeFilter === 'active' && 'Active Only'}
-            {activeFilter === 'inactive' && 'Inactive Only'}
-          </Button>
-        </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant={showLowStock ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowLowStock(!showLowStock)}
+              className="flex items-center gap-2"
+            >
+              <Filter className="w-4 h-4" />
+              {showLowStock ? "Show All" : `Low Stock ${lowStockCount > 0 ? `(${lowStockCount})` : ''}`}
+            </Button>
+            <Button 
+              variant={activeFilter !== 'all' ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                if (activeFilter === 'all') {
+                  setActiveFilter('active');
+                } else if (activeFilter === 'active') {
+                  setActiveFilter('inactive');
+                } else {
+                  setActiveFilter('all');
+                }
+              }}
+              className="flex items-center gap-2"
+            >
+              {activeFilter === 'all' && 'Show All Products'}
+              {activeFilter === 'active' && 'Active Only'}
+              {activeFilter === 'inactive' && 'Inactive Only'}
+            </Button>
+            {activeTab === 'contact-lenses' && (
+              <Button 
+                variant={lensFilter !== 'all' ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  if (lensFilter === 'all') {
+                    setLensFilter('lentilles');
+                  } else if (lensFilter === 'lentilles') {
+                    setLensFilter('produits');
+                  } else {
+                    setLensFilter('all');
+                  }
+                }}
+                className="flex items-center gap-2"
+              >
+                {lensFilter === 'all' && 'All Types'}
+                {lensFilter === 'lentilles' && 'Lentilles Only'}
+                {lensFilter === 'produits' && 'Produits Only'}
+              </Button>
+            )}
+          </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -439,12 +525,10 @@ export const StoreInventory: React.FC = () => {
                 key={lens.id}
                 lens={lens}
                 onEdit={() => {
-                  toast.info(`Editing ${lens.name}`);
+                  setSelectedContactLens(lens);
+                  setIsEditContactLensOpen(true);
                 }}
-                onDelete={() => {
-                  setContactLenses(contactLenses.filter(l => l.id !== lens.id));
-                  toast.success('Contact lens deleted successfully');
-                }}
+                onDelete={() => handleDeleteContactLens(lens.id)}
                 onClick={() => {
                   toast.info(`Viewing ${lens.name} details`);
                 }}
@@ -467,6 +551,7 @@ export const StoreInventory: React.FC = () => {
                   const sampleLens: ContactLens = {
                     id: `lens-${Date.now()}`,
                     name: 'Acuvue Oasys',
+                    category: 'lentilles',
                     brand: 'Johnson & Johnson',
                     type: 'daily',
                     material: 'Silicone Hydrogel',
@@ -566,6 +651,22 @@ export const StoreInventory: React.FC = () => {
         onSubmit={handleEditProduct}
         product={selectedProduct || undefined}
         categories={categories}
+      />
+
+      <ContactLensFormModal
+        isOpen={isAddContactLensOpen}
+        onClose={() => setIsAddContactLensOpen(false)}
+        onSubmit={handleAddContactLens}
+      />
+
+      <ContactLensFormModal
+        isOpen={isEditContactLensOpen}
+        onClose={() => {
+          setIsEditContactLensOpen(false);
+          setSelectedContactLens(null);
+        }}
+        onSubmit={handleEditContactLens}
+        lens={selectedContactLens || undefined}
       />
     </div>
   );

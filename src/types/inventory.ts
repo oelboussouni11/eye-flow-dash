@@ -67,6 +67,7 @@ export interface LensOrder {
 export interface ContactLens {
   id: string;
   name: string;
+  category: 'lentilles' | 'produits'; // lentilles = contact lenses, produits = lens care products
   brand: string;
   type: 'daily' | 'weekly' | 'monthly' | 'yearly';
   material: string;

@@ -45,8 +45,17 @@ export const ContactLensCard: React.FC<ContactLensCardProps> = ({
       case 'weekly': return 'Hebdomadaires';
       case 'monthly': return 'Mensuelles';
       case 'yearly': return 'Annuelles';
+      case 'solution': return 'Solution multifonction';
+      case 'saline': return 'Sérum physiologique';
+      case 'cleaner': return 'Nettoyant';
+      case 'drops': return 'Gouttes hydratantes';
+      case 'case': return 'Étui de rangement';
       default: return type;
     }
+  };
+
+  const getCategoryLabel = (category: string) => {
+    return category === 'lentilles' ? 'Lentilles' : 'Produits de Lentille';
   };
 
   return (
@@ -105,16 +114,27 @@ export const ContactLensCard: React.FC<ContactLensCardProps> = ({
       <CardContent className="pt-0">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Type</span>
+            <span className="text-sm text-muted-foreground">Category</span>
             <Badge variant="outline" className="text-xs">
-              {getTypeLabel(lens.type)}
+              {getCategoryLabel(lens.category)}
             </Badge>
           </div>
 
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Power</span>
-            <span className="font-medium">{lens.power}</span>
-          </div>
+          {lens.type && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Type</span>
+              <Badge variant="outline" className="text-xs">
+                {getTypeLabel(lens.type)}
+              </Badge>
+            </div>
+          )}
+
+          {lens.power && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Power</span>
+              <span className="font-medium">{lens.power}</span>
+            </div>
+          )}
           
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Price</span>
