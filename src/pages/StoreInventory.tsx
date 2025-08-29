@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Plus, Search, Filter, Package, Eye, Clock } from 'lucide-react';
+import { Plus, Search, Filter, Package, Eye, Clock, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CategoryCard } from '@/components/inventory/CategoryCard';
@@ -27,6 +28,8 @@ export const StoreInventory: React.FC = () => {
   const [isEditProductOpen, setIsEditProductOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('products');
+  const [showLowStock, setShowLowStock] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
 
   // Initialize default categories on first load
   useEffect(() => {
@@ -76,6 +79,20 @@ export const StoreInventory: React.FC = () => {
   };
 
   const handleAddProduct = (data: any) => {
+    // Check for duplicate SKU
+    const existingSKU = products.find(p => p.sku.toLowerCase() === data.sku.toLowerCase());
+    if (existingSKU) {
+      toast.error('A product with this SKU already exists');
+      return;
+    }
+
+    // Check for duplicate name
+    const existingName = products.find(p => p.name.toLowerCase() === data.name.toLowerCase());
+    if (existingName) {
+      toast.error('A product with this name already exists');
+      return;
+    }
+
     const newProduct: Product = {
       id: `product-${Date.now()}`,
       ...data,
@@ -91,6 +108,24 @@ export const StoreInventory: React.FC = () => {
 
   const handleEditProduct = (data: any) => {
     if (!selectedProduct) return;
+    
+    // Check for duplicate SKU (excluding current product)
+    const existingSKU = products.find(p => 
+      p.id !== selectedProduct.id && p.sku.toLowerCase() === data.sku.toLowerCase()
+    );
+    if (existingSKU) {
+      toast.error('A product with this SKU already exists');
+      return;
+    }
+
+    // Check for duplicate name (excluding current product)
+    const existingName = products.find(p => 
+      p.id !== selectedProduct.id && p.name.toLowerCase() === data.name.toLowerCase()
+    );
+    if (existingName) {
+      toast.error('A product with this name already exists');
+      return;
+    }
     
     const updatedProducts = products.map(product =>
       product.id === selectedProduct.id
@@ -112,11 +147,20 @@ export const StoreInventory: React.FC = () => {
     category.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.brand?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.brand?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesLowStock = !showLowStock || product.stock <= product.minStock;
+    const matchesActive = showInactive || product.isActive;
+    
+    return matchesSearch && matchesLowStock && matchesActive;
+  });
+
+  // Count products with low stock for alert
+  const lowStockCount = products.filter(p => p.stock <= p.minStock && p.stock > 0).length;
+  const outOfStockCount = products.filter(p => p.stock <= 0).length;
 
   const filteredLensOrders = lensOrders.filter(order =>
     order.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -135,6 +179,22 @@ export const StoreInventory: React.FC = () => {
           <p className="text-muted-foreground mt-1">
             Manage products and stock levels for this store
           </p>
+          {(lowStockCount > 0 || outOfStockCount > 0) && (
+            <div className="flex gap-2 mt-2">
+              {lowStockCount > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  <AlertTriangle className="w-3 h-3 mr-1" />
+                  {lowStockCount} Low Stock
+                </Badge>
+              )}
+              {outOfStockCount > 0 && (
+                <Badge variant="destructive" className="text-xs">
+                  <AlertTriangle className="w-3 h-3 mr-1" />
+                  {outOfStockCount} Out of Stock
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
         
         {canManageInventory && (
@@ -167,14 +227,25 @@ export const StoreInventory: React.FC = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button 
-          variant="outline" 
-          className="flex items-center gap-2"
-          onClick={() => toast.info("Filter functionality coming soon")}
-        >
-          <Filter className="w-4 h-4" />
-          Filter
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant={showLowStock ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowLowStock(!showLowStock)}
+            className="flex items-center gap-2"
+          >
+            <Filter className="w-4 h-4" />
+            {showLowStock ? "Show All" : `Low Stock ${lowStockCount > 0 ? `(${lowStockCount})` : ''}`}
+          </Button>
+          <Button 
+            variant={showInactive ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowInactive(!showInactive)}
+            className="flex items-center gap-2"
+          >
+            Show Inactive
+          </Button>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
