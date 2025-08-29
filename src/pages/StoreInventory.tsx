@@ -13,6 +13,7 @@ import { LensOrderCard } from '@/components/inventory/LensOrderCard';
 import { ContactLensCard } from '@/components/inventory/ContactLensCard';
 import { ContactLensFormModal } from '@/components/inventory/ContactLensFormModal';
 import { ImportExportManager } from '@/components/inventory/ImportExportManager';
+import { TemplateGuide } from '@/components/inventory/TemplateGuide';
 import { Category, Product, LensOrder, ContactLens, DEFAULT_CATEGORIES } from '@/types/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -356,7 +357,7 @@ export const StoreInventory: React.FC = () => {
         </div>
         
         {canManageInventory && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={() => setIsAddCategoryOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Add Category
@@ -370,13 +371,16 @@ export const StoreInventory: React.FC = () => {
               Add Contact Lens
             </Button>
             
-            <ImportExportManager
-              storeId={storeId || ''}
-              products={products}
-              contactLenses={contactLenses}
-              onImportProducts={handleImportProducts}
-              onImportContactLenses={handleImportContactLenses}
-            />
+            {/* Highlighted Templates Section */}
+            <div className="flex gap-2 border-l border-border pl-2 ml-2">
+              <ImportExportManager
+                storeId={storeId || ''}
+                products={products}
+                contactLenses={contactLenses}
+                onImportProducts={handleImportProducts}
+                onImportContactLenses={handleImportContactLenses}
+              />
+            </div>
             
             <Button 
               variant="primary" 
@@ -451,7 +455,9 @@ export const StoreInventory: React.FC = () => {
                 {lensFilter === 'produits' && 'Produits Only'}
               </Button>
             )}
-          </div>
+      </div>
+
+      <TemplateGuide />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

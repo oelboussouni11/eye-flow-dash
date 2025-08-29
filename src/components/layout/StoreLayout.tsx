@@ -59,36 +59,69 @@ export const StoreLayout: React.FC = () => {
     }
   }, [storeId]);
 
-  // Global search functionality
+  // Enhanced global search functionality across ALL stores
   React.useEffect(() => {
-    if (globalSearch.length > 2 && storeId) {
+    if (globalSearch.length > 2) {
       const searchTerm = globalSearch.toLowerCase();
       const results: any[] = [];
 
-      // Search products
-      const products = JSON.parse(localStorage.getItem(`store-${storeId}-products`) || '[]');
-      const matchingProducts = products.filter((p: any) => 
-        p.name.toLowerCase().includes(searchTerm) ||
-        p.sku.toLowerCase().includes(searchTerm) ||
-        p.brand?.toLowerCase().includes(searchTerm)
-      ).map((p: any) => ({ ...p, type: 'product', page: 'inventory' }));
+      // Get all stores from localStorage
+      const allStores = JSON.parse(localStorage.getItem('opti_stores') || '[]');
+      
+      allStores.forEach((store: any) => {
+        const storePrefix = `store-${store.id}`;
+        
+        // Search products across all stores
+        const products = JSON.parse(localStorage.getItem(`${storePrefix}-products`) || '[]');
+        const matchingProducts = products.filter((p: any) => 
+          p.name.toLowerCase().includes(searchTerm) ||
+          p.sku.toLowerCase().includes(searchTerm) ||
+          p.brand?.toLowerCase().includes(searchTerm)
+        ).map((p: any) => ({ 
+          ...p, 
+          type: 'product', 
+          page: 'inventory',
+          storeName: store.name,
+          storeId: store.id 
+        }));
 
-      // Search contact lenses
-      const contactLenses = JSON.parse(localStorage.getItem(`store-${storeId}-contactLenses`) || '[]');
-      const matchingLenses = contactLenses.filter((l: any) => 
-        l.name.toLowerCase().includes(searchTerm) ||
-        l.brand.toLowerCase().includes(searchTerm)
-      ).map((l: any) => ({ ...l, type: 'contact-lens', page: 'inventory' }));
+        // Search contact lenses across all stores
+        const contactLenses = JSON.parse(localStorage.getItem(`${storePrefix}-contactLenses`) || '[]');
+        const matchingLenses = contactLenses.filter((l: any) => 
+          l.name.toLowerCase().includes(searchTerm) ||
+          l.brand.toLowerCase().includes(searchTerm)
+        ).map((l: any) => ({ 
+          ...l, 
+          type: 'contact-lens', 
+          page: 'inventory',
+          storeName: store.name,
+          storeId: store.id 
+        }));
 
-      // Search clients (assuming clients are stored)
-      const clients = JSON.parse(localStorage.getItem(`store-${storeId}-clients`) || '[]');
-      const matchingClients = clients.filter((c: any) => 
-        c.name?.toLowerCase().includes(searchTerm) ||
-        c.email?.toLowerCase().includes(searchTerm)
-      ).map((c: any) => ({ ...c, type: 'client', page: 'clients' }));
+        // Search clients across all stores
+        const clients = JSON.parse(localStorage.getItem(`${storePrefix}-clients`) || '[]');
+        const matchingClients = clients.filter((c: any) => 
+          c.name?.toLowerCase().includes(searchTerm) ||
+          c.email?.toLowerCase().includes(searchTerm)
+        ).map((c: any) => ({ 
+          ...c, 
+          type: 'client', 
+          page: 'clients',
+          storeName: store.name,
+          storeId: store.id 
+        }));
 
-      results.push(...matchingProducts, ...matchingLenses, ...matchingClients);
-      setSearchResults(results.slice(0, 10)); // Limit to 10 results
+        results.push(...matchingProducts, ...matchingLenses, ...matchingClients);
+      });
+
+      // Sort results by relevance (current store first, then alphabetically)
+      results.sort((a, b) => {
+        if (a.storeId === storeId && b.storeId !== storeId) return -1;
+        if (b.storeId === storeId && a.storeId !== storeId) return 1;
+        return a.name.localeCompare(b.name);
+      });
+
+      setSearchResults(results.slice(0, 15)); // Limit to 15 results
       setShowSearchResults(results.length > 0);
     } else {
       setSearchResults([]);
@@ -100,10 +133,17 @@ export const StoreLayout: React.FC = () => {
     setShowSearchResults(false);
     setGlobalSearch('');
     
-    if (result.page === 'inventory') {
-      navigate(`/store/${storeId}/inventory`);
-    } else if (result.page === 'clients') {
-      navigate(`/store/${storeId}/clients`);
+    // Navigate to the correct store and page
+    if (result.storeId !== storeId) {
+      // Different store - navigate to that store first
+      navigate(`/store/${result.storeId}/${result.page}`);
+    } else {
+      // Same store - just navigate to the page
+      if (result.page === 'inventory') {
+        navigate(`/store/${storeId}/inventory`);
+      } else if (result.page === 'clients') {
+        navigate(`/store/${storeId}/clients`);
+      }
     }
   };
 
@@ -143,7 +183,7 @@ export const StoreLayout: React.FC = () => {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 z-10" />
                   <Input 
-                    placeholder="Search products, clients, lenses..." 
+                    placeholder="Search across all stores..." 
                     className="pl-10 w-72 bg-background border-border focus:ring-2 focus:ring-primary/20 transition-all"
                     value={globalSearch}
                     onChange={(e) => setGlobalSearch(e.target.value)}
@@ -186,6 +226,11 @@ export const StoreLayout: React.FC = () => {
                                       {result.name}
                                     </p>
                                     <div className="flex items-center gap-1">
+                                      {result.storeId !== storeId && (
+                                        <span className="text-xs text-muted-foreground bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded">
+                                          {result.storeName}
+                                        </span>
+                                      )}
                                       <span className="text-xs text-muted-foreground capitalize bg-muted px-2 py-1 rounded">
                                         {result.type.replace('-', ' ')}
                                       </span>
@@ -217,6 +262,9 @@ export const StoreLayout: React.FC = () => {
                                           <span className="font-medium">Email:</span> {result.email}
                                         </>
                                       )}
+                                      {result.storeId !== storeId && (
+                                        <span className="text-blue-600 dark:text-blue-400"> • Click to visit store</span>
+                                      )}
                                     </p>
                                   </div>
                                 </div>
@@ -227,7 +275,7 @@ export const StoreLayout: React.FC = () => {
                           <div className="p-6 text-center">
                             <Package className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                             <p className="text-sm text-muted-foreground">No results found for "{globalSearch}"</p>
-                            <p className="text-xs text-muted-foreground mt-1">Try different keywords</p>
+                            <p className="text-xs text-muted-foreground mt-1">Search across all your stores</p>
                           </div>
                         ) : null}
                       </div>
