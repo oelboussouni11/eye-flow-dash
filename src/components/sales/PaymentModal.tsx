@@ -45,7 +45,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
   if (!sale) return null;
 
-  const maxPayment = sale.remainingBalance;
+  const maxPayment = sale.remainingAmount;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -58,7 +58,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           <div className="space-y-2">
             <Label>Outstanding Balance</Label>
             <div className="text-2xl font-bold text-red-600">
-              ${sale.remainingBalance.toFixed(2)}
+              ${sale.remainingAmount.toFixed(2)}
             </div>
           </div>
 

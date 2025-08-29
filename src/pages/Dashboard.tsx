@@ -7,6 +7,7 @@ import { StoreCard, Store } from '@/components/stores/StoreCard';
 import { StoreFormModal } from '@/components/stores/StoreFormModal';
 import { StatsGrid } from '@/components/dashboard/StatsGrid';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
+import { TaxConfiguration } from '@/components/dashboard/TaxConfiguration';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -272,6 +273,7 @@ export const Dashboard: React.FC = () => {
 
         {/* Activity Sidebar */}
         <div className="space-y-6">
+          <TaxConfiguration />
           <RecentActivity />
         </div>
       </div>

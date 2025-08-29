@@ -9,6 +9,7 @@ import { SalesTable } from '@/components/sales/SalesTable';
 import { SaleViewModal } from '@/components/sales/SaleViewModal';
 import { PaymentModal } from '@/components/sales/PaymentModal';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTax } from '@/contexts/TaxContext';
 import { Sale, SaleFormData, PaymentRecord } from '@/types/sales';
 import { Product, ContactLens, DEFAULT_CATEGORIES } from '@/types/inventory';
 import { toast } from 'sonner';
@@ -16,6 +17,7 @@ import { toast } from 'sonner';
 export const StoreSales: React.FC = () => {
   const { storeId } = useParams();
   const { user } = useAuth();
+  const { taxRate } = useTax();
   const [sales, setSales] = useState<Sale[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [contactLenses, setContactLenses] = useState<ContactLens[]>([]);
@@ -130,18 +132,18 @@ export const StoreSales: React.FC = () => {
         tax: 5.12,
         discount: 0,
         total: 37.10,
-        amountPaid: 37.10,
-        remainingBalance: 0,
+        paidAmount: 37.10,
+        remainingAmount: 0,
         payments: [
           {
             id: '1',
             amount: 37.10,
             method: 'card',
             date: new Date(),
-            notes: 'Initial payment'
+            notes: 'Full payment'
           }
         ],
-        status: 'completed',
+        status: 'paid',
         createdAt: new Date(),
         createdBy: user?.id || '',
         storeId: storeId || ''
@@ -163,17 +165,26 @@ export const StoreSales: React.FC = () => {
 
     const subtotal = saleItems.reduce((sum, item) => sum + item.totalPrice, 0);
     const discountAmount = (subtotal * formData.discount) / 100;
-    const taxRate = 0.16;
-    const taxAmount = (subtotal - discountAmount) * taxRate;
+    const taxAmount = (subtotal - discountAmount) * (taxRate / 100);
     const total = subtotal - discountAmount + taxAmount;
     
     const initialPayment = formData.initialPayment || 0;
-    const remainingBalance = total - initialPayment;
-    const status = remainingBalance > 0 ? 'partial' : 'completed';
+    const paidAmount = Math.min(initialPayment, total);
+    const remainingAmount = total - paidAmount;
+    
+    // Determine status based on payment
+    let status: Sale['status'];
+    if (remainingAmount <= 0) {
+      status = 'paid';
+    } else if (paidAmount > 0) {
+      status = 'partial';
+    } else {
+      status = 'unpaid';
+    }
 
-    const payments: PaymentRecord[] = initialPayment > 0 ? [{
-      id: '1',
-      amount: initialPayment,
+    const payments: PaymentRecord[] = paidAmount > 0 ? [{
+      id: Date.now().toString(),
+      amount: paidAmount,
       method: formData.paymentMethod,
       date: new Date(),
       notes: 'Initial payment'
@@ -190,8 +201,8 @@ export const StoreSales: React.FC = () => {
       tax: taxAmount,
       discount: discountAmount,
       total,
-      amountPaid: initialPayment,
-      remainingBalance,
+      paidAmount,
+      remainingAmount,
       payments,
       status,
       notes: formData.notes,
@@ -293,14 +304,23 @@ export const StoreSales: React.FC = () => {
           date: new Date()
         };
         
-        const newAmountPaid = sale.amountPaid + payment.amount;
-        const newRemainingBalance = sale.total - newAmountPaid;
-        const newStatus = newRemainingBalance <= 0 ? 'completed' : 'partial';
+        const newPaidAmount = sale.paidAmount + payment.amount;
+        const newRemainingAmount = sale.total - newPaidAmount;
+        
+        // Determine new status
+        let newStatus: Sale['status'];
+        if (newRemainingAmount <= 0) {
+          newStatus = 'paid';
+        } else if (newPaidAmount > 0) {
+          newStatus = 'partial';
+        } else {
+          newStatus = 'unpaid';
+        }
         
         return {
           ...sale,
-          amountPaid: newAmountPaid,
-          remainingBalance: Math.max(0, newRemainingBalance),
+          paidAmount: newPaidAmount,
+          remainingAmount: Math.max(0, newRemainingAmount),
           payments: [...sale.payments, newPayment],
           status: newStatus
         };
@@ -323,7 +343,7 @@ export const StoreSales: React.FC = () => {
 
   const totalSales = sales.length;
   const totalRevenue = sales.reduce((sum, sale) => 
-    sale.status === 'completed' ? sum + sale.total : sum, 0
+    sale.status !== 'refunded' ? sum + sale.paidAmount : sum, 0
   );
   const avgSaleValue = totalSales > 0 ? totalRevenue / totalSales : 0;
   const todaySales = sales.filter(sale => {

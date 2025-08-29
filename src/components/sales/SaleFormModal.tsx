@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { SaleFormData, SaleItem } from '@/types/sales';
+import { Card, CardContent } from '@/components/ui/card';
+import { Sale, SaleFormData, PaymentRecord, SaleItem } from '@/types/sales';
+import { useTax } from '@/contexts/TaxContext';
 import { Product, ContactLens } from '@/types/inventory';
 import { toast } from 'sonner';
 
@@ -40,6 +41,7 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
   isEditMode = false,
   editSale
 }) => {
+  const { taxRate } = useTax();
   const [formData, setFormData] = useState<SaleFormData>({
     items: [],
     discount: 0,
@@ -67,7 +69,7 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
         })),
         discount: (editSale.discount / editSale.subtotal) * 100,
         paymentMethod: editSale.payments[0]?.method || 'cash',
-        initialPayment: editSale.amountPaid,
+        initialPayment: editSale.paidAmount,
         notes: editSale.notes || ''
       });
       
@@ -134,9 +136,9 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
 
   const subtotal = formData.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
   const discountAmount = (subtotal * formData.discount) / 100;
-  const taxRate = 0.16; // 16% tax
-  const taxAmount = (subtotal - discountAmount) * taxRate;
+  const taxAmount = (subtotal - discountAmount) * (taxRate / 100);
   const total = subtotal - discountAmount + taxAmount;
+  const remainingBalance = total - (formData.initialPayment || 0);
 
   const handleSubmit = () => {
     if (formData.items.length === 0) {
@@ -341,6 +343,22 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
                 </Select>
               </div>
               <div>
+                <Label htmlFor="initialPayment">Initial Payment</Label>
+                <Input
+                  id="initialPayment"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max={total}
+                  value={formData.initialPayment || 0}
+                  onChange={(e) => setFormData({ ...formData, initialPayment: Number(e.target.value) })}
+                  placeholder="0.00"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Leave 0 for unpaid sale or enter partial/full amount
+                </p>
+              </div>
+              <div>
                 <Label htmlFor="notes">Notes</Label>
                 <Textarea
                   id="notes"
@@ -365,7 +383,7 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
                   <span>-${discountAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Tax (16%):</span>
+                  <span>Tax ({taxRate}%):</span>
                   <span>${taxAmount.toFixed(2)}</span>
                 </div>
                 <Separator />
@@ -373,6 +391,18 @@ export const SaleFormModal: React.FC<SaleFormModalProps> = ({
                   <span>Total:</span>
                   <span>${total.toFixed(2)}</span>
                 </div>
+                {(formData.initialPayment || 0) > 0 && (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span>Initial Payment:</span>
+                      <span>${(formData.initialPayment || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-medium text-red-600">
+                      <span>Remaining Balance:</span>
+                      <span>${remainingBalance.toFixed(2)}</span>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>

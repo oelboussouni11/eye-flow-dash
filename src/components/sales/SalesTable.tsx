@@ -84,18 +84,18 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                   </div>
                 </TableCell>
                 <TableCell className="font-medium">${sale.total.toFixed(2)}</TableCell>
-                <TableCell>${sale.amountPaid.toFixed(2)}</TableCell>
+                <TableCell>${sale.paidAmount.toFixed(2)}</TableCell>
                 <TableCell>
-                  <span className={sale.remainingBalance > 0 ? 'text-red-600 font-medium' : 'text-green-600'}>
-                    ${sale.remainingBalance.toFixed(2)}
+                  <span className={sale.remainingAmount > 0 ? 'text-red-600 font-medium' : 'text-green-600'}>
+                    ${sale.remainingAmount.toFixed(2)}
                   </span>
                 </TableCell>
                 <TableCell>
                   <Badge 
                     variant={
-                      sale.status === 'completed' ? 'default' : 
+                      sale.status === 'paid' ? 'default' : 
                       sale.status === 'partial' ? 'secondary' :
-                      sale.status === 'pending' ? 'outline' : 
+                      sale.status === 'unpaid' ? 'outline' : 
                       'destructive'
                     }
                   >
@@ -121,7 +121,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                     >
                       <Printer className="w-4 h-4" />
                     </Button>
-                    {sale.remainingBalance > 0 && sale.status !== 'refunded' && (
+                    {sale.remainingAmount > 0 && sale.status !== 'refunded' && (
                       <Button
                         variant="outline"
                         size="sm"

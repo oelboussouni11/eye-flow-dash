@@ -126,10 +126,10 @@ export const SaleViewModal: React.FC<SaleViewModalProps> = ({
             <table class="summary-table">
               <tr><td>Subtotal:</td><td style="text-align: right;">$${sale.subtotal.toFixed(2)}</td></tr>
               <tr><td>Discount:</td><td style="text-align: right;">-$${sale.discount.toFixed(2)}</td></tr>
-              <tr><td>Tax (16%):</td><td style="text-align: right;">$${sale.tax.toFixed(2)}</td></tr>
+              <tr><td>Tax (${(sale.tax / (sale.subtotal - sale.discount) * 100).toFixed(1)}%):</td><td style="text-align: right;">$${sale.tax.toFixed(2)}</td></tr>
               <tr class="total-row"><td>Total:</td><td style="text-align: right;">$${sale.total.toFixed(2)}</td></tr>
-              <tr><td>Amount Paid:</td><td style="text-align: right;">$${sale.amountPaid.toFixed(2)}</td></tr>
-              <tr><td style="font-weight: bold;">Balance Due:</td><td style="text-align: right; font-weight: bold;">$${sale.remainingBalance.toFixed(2)}</td></tr>
+              <tr><td>Amount Paid:</td><td style="text-align: right;">$${sale.paidAmount.toFixed(2)}</td></tr>
+              <tr><td style="font-weight: bold;">Balance Due:</td><td style="text-align: right; font-weight: bold;">$${sale.remainingAmount.toFixed(2)}</td></tr>
             </table>
           </div>
 
@@ -226,7 +226,7 @@ export const SaleViewModal: React.FC<SaleViewModalProps> = ({
                   <span>-${sale.discount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Tax:</span>
+                  <span>Tax ({(sale.tax / (sale.subtotal - sale.discount) * 100).toFixed(1)}%):</span>
                   <span>${sale.tax.toFixed(2)}</span>
                 </div>
                 <Separator />
@@ -236,11 +236,11 @@ export const SaleViewModal: React.FC<SaleViewModalProps> = ({
                 </div>
                 <div className="flex justify-between">
                   <span>Amount Paid:</span>
-                  <span>${sale.amountPaid.toFixed(2)}</span>
+                  <span>${sale.paidAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-red-600">
-                  <span>Balance Due:</span>
-                  <span>${sale.remainingBalance.toFixed(2)}</span>
+                  <span>Remaining:</span>
+                  <span>${sale.remainingAmount.toFixed(2)}</span>
                 </div>
               </CardContent>
             </Card>

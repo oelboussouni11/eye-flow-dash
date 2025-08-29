@@ -27,10 +27,10 @@ export interface Sale {
   tax: number;
   discount: number;
   total: number;
-  amountPaid: number;
-  remainingBalance: number;
+  paidAmount: number;
+  remainingAmount: number;
   payments: PaymentRecord[];
-  status: 'completed' | 'pending' | 'refunded' | 'partial';
+  status: 'paid' | 'partial' | 'unpaid' | 'refunded';
   notes?: string;
   createdAt: Date;
   createdBy: string;
