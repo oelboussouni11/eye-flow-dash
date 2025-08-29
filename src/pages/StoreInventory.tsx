@@ -13,7 +13,6 @@ import { LensOrderCard } from '@/components/inventory/LensOrderCard';
 import { ContactLensCard } from '@/components/inventory/ContactLensCard';
 import { ContactLensFormModal } from '@/components/inventory/ContactLensFormModal';
 import { ImportExportManager } from '@/components/inventory/ImportExportManager';
-import { TemplateGuide } from '@/components/inventory/TemplateGuide';
 import { Category, Product, LensOrder, ContactLens, DEFAULT_CATEGORIES } from '@/types/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -456,8 +455,6 @@ export const StoreInventory: React.FC = () => {
               </Button>
             )}
       </div>
-
-      <TemplateGuide />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
